@@ -3,6 +3,7 @@
 import { memo } from "react";
 import { motion, type MotionValue, useTransform } from "framer-motion";
 import Image from "next/image";
+import { BlueprintLayerMobile } from "./BlueprintLayerMobile";
 
 interface BlueprintLayerProps {
   scrollProgress: MotionValue<number>;
@@ -10,31 +11,28 @@ interface BlueprintLayerProps {
 }
 
 /**
- * BlueprintLayer
- * 
+ * BlueprintLayerDesktop
+ *
  * Phase 0-1: Blueprint house with architectural overlay
- * Visible: 0-30% scroll
+ * Visible: 0-30% scroll (desktop lg+)
  * Fades out as construction framing emerges
  */
-export const BlueprintLayer = memo(function BlueprintLayer({
+const BlueprintLayerDesktop = memo(function BlueprintLayerDesktop({
   scrollProgress,
   reducedMotion,
 }: BlueprintLayerProps) {
-  // Opacity: Full at start, fades out 10-30%
   const opacity = useTransform(
     scrollProgress,
     [0, 0.1, 0.25, 0.3],
     [1, 1, 0.3, 0]
   );
 
-  // Slight scale for depth
   const scale = useTransform(
     scrollProgress,
     [0, 0.3],
     reducedMotion ? [1, 1] : [1, 1.05]
   );
 
-  // Blur as it fades (creates depth)
   const blur = useTransform(
     scrollProgress,
     [0.1, 0.3],
@@ -43,7 +41,7 @@ export const BlueprintLayer = memo(function BlueprintLayer({
 
   return (
     <motion.div
-      className="absolute inset-0 will-change-transform"
+      className="absolute inset-0 hidden lg:block will-change-transform"
       style={{
         opacity,
         scale,
@@ -60,11 +58,9 @@ export const BlueprintLayer = memo(function BlueprintLayer({
         sizes="100vw"
         unoptimized
       />
-      
-      {/* Blueprint tint overlay */}
+
       <div className="absolute inset-0 bg-blue-950/10 mix-blend-multiply pointer-events-none" />
-      
-      {/* Text readability gradient - only on blueprint layer */}
+
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -79,5 +75,23 @@ export const BlueprintLayer = memo(function BlueprintLayer({
         }}
       />
     </motion.div>
+  );
+});
+
+export const BlueprintLayer = memo(function BlueprintLayer({
+  scrollProgress,
+  reducedMotion,
+}: BlueprintLayerProps) {
+  return (
+    <>
+      <BlueprintLayerDesktop
+        scrollProgress={scrollProgress}
+        reducedMotion={reducedMotion}
+      />
+      <BlueprintLayerMobile
+        scrollProgress={scrollProgress}
+        reducedMotion={reducedMotion}
+      />
+    </>
   );
 });

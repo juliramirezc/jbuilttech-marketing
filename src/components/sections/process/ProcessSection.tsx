@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { SectionHeader } from "./SectionHeader";
 import { ProcessTimeline } from "./ProcessTimeline";
+import { ProcessSectionMobile } from "./ProcessSectionMobile";
 import { type ProcessStep } from "./ProcessCard";
 
 /**
@@ -155,26 +156,30 @@ export function ProcessSection() {
     <section
       ref={sectionRef}
       id="process"
-      className="relative py-16 md:py-20 lg:py-24 bg-[#090909] overflow-hidden"
+      className="relative py-10 md:py-14 lg:py-24 bg-[#090909] overflow-hidden"
       aria-labelledby="process-heading"
     >
       {/* Subtle top fade from Hero */}
       <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#0a0a0a] to-transparent pointer-events-none" />
 
       <div className="container-luxury relative z-10">
-        <SectionHeader
-          caption="Our Process"
-          title="We Build Your Brand the Same Way You Build a Home."
-          titleHighlight="Build a Home"
-          description="Every successful contractor starts with a plan. We do exactly the same for your business. From blueprint to growth, every step is intentionally designed to earn trust before your customer ever calls."
-          reducedMotion={reducedMotion}
-        />
+        <div className="hidden lg:block">
+          <SectionHeader
+            caption="Our Process"
+            title="We Build Your Brand the Same Way You Build a Home."
+            titleHighlight="Build a Home"
+            description="Every successful contractor starts with a plan. We do exactly the same for your business. From blueprint to growth, every step is intentionally designed to earn trust before your customer ever calls."
+            reducedMotion={reducedMotion}
+          />
 
-        <ProcessTimeline
-          steps={PROCESS_STEPS}
-          lineProgress={lineProgress}
-          reducedMotion={reducedMotion}
-        />
+          <ProcessTimeline
+            steps={PROCESS_STEPS}
+            lineProgress={lineProgress}
+            reducedMotion={reducedMotion}
+          />
+        </div>
+
+        <ProcessSectionMobile />
       </div>
 
       {/* Subtle bottom gradient */}

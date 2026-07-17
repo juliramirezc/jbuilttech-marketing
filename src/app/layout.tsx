@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { GoogleTagManager } from "@next/third-parties/google";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -52,6 +53,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <GoogleTagManager gtmId="GTM-MGZPGP8C" />
       <body className="min-h-screen bg-[#0B0B0B] text-white antialiased">
         {/* Subtle noise texture for premium feel */}
         <div className="noise-overlay" aria-hidden="true" />

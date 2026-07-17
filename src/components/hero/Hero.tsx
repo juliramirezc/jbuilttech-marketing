@@ -28,8 +28,11 @@ import {
  * - 70-100%: Digital ecosystem appears
  */
 
-const SCROLL_HEIGHT_VH = 400; // 4 viewport heights — ~100vh per story phase
-
+/**
+ * Scroll runway:
+ * - Mobile (<lg): 300vh — Blueprint → Digital Presence (no Framing / Finished Home)
+ * - Desktop (lg+): 400vh — full Blueprint → Framing → Finished Home → Digital story
+ */
 export function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion() ?? false;
@@ -64,8 +67,7 @@ export function Hero() {
   return (
     <section
       ref={containerRef}
-      className="relative"
-      style={{ height: `${SCROLL_HEIGHT_VH}vh` }}
+      className="relative h-[300vh] lg:h-[400vh]"
       aria-label="Hero section - Watch a contractor brand being built"
     >
       {/* Sticky viewport - stays fixed while user scrolls through */}

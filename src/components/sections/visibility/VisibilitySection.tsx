@@ -6,9 +6,6 @@ import { AnalyticsMockup } from "./AnalyticsMockup";
 import { MetricCard } from "./MetricCard";
 import { PhoneMockup } from "./PhoneMockup";
 import { SocialCard } from "./SocialCard";
-import {
-  VISIBILITY_SECTION_HEIGHT_VH,
-} from "./constants";
 
 /**
  * Premium icons for metric cards
@@ -158,18 +155,17 @@ export function VisibilitySection() {
     <section
       ref={sectionRef}
       id="visibility"
-      className="relative pt-10 md:pt-12 lg:pt-14 pb-6 md:pb-8 lg:pb-10 bg-[#090909] overflow-hidden"
+      className="relative pt-8 md:pt-10 lg:pt-14 pb-4 md:pb-6 lg:pb-10 bg-[#090909] overflow-hidden min-h-[115vh] lg:min-h-[175vh]"
       aria-labelledby="visibility-heading"
-      style={{ minHeight: `${VISIBILITY_SECTION_HEIGHT_VH}vh` }}
     >
       {/* Subtle top gradient */}
       <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#0a0a0a] to-transparent pointer-events-none" />
 
       {/* Sticky container for scroll-driven content */}
-      <div className="sticky top-0 min-h-screen flex flex-col justify-center py-8 md:py-10">
+      <div className="sticky top-0 min-h-screen flex flex-col justify-center py-6 md:py-8 lg:py-10">
         <div className="container-luxury relative z-10">
           {/* Section Header - Minimal */}
-          <div className="text-center mb-8 md:mb-10">
+          <div className="text-center mb-6 md:mb-8 lg:mb-10">
             <motion.p
               className="text-editorial-caption text-gold mb-4"
               style={{ opacity: captionOpacity, y: captionY }}

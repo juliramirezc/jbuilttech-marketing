@@ -50,7 +50,7 @@ export const FramingLayer = memo(function FramingLayer({
 
   return (
     <motion.div
-      className="absolute inset-0 will-change-transform"
+      className="absolute inset-0 hidden lg:block will-change-transform"
       style={{
         opacity,
         scale,

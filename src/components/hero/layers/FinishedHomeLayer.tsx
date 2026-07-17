@@ -65,7 +65,7 @@ export const FinishedHomeLayer = memo(function FinishedHomeLayer({
 
   return (
     <motion.div
-      className="absolute inset-0 flex items-center justify-center will-change-transform"
+      className="absolute inset-0 hidden lg:flex items-center justify-center will-change-transform"
       style={{ opacity }}
     >
       <motion.div

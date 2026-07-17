@@ -61,7 +61,7 @@ export function ConsultationSection() {
     <section
       ref={ref}
       id="consultation"
-      className="relative min-h-[50vh] flex items-center justify-center bg-[#0a0a0a] pt-10 md:pt-12 lg:pt-14 pb-16 md:pb-20 lg:pb-24 overflow-hidden"
+      className="relative min-h-0 lg:min-h-[50vh] flex items-center justify-center bg-[#0a0a0a] pt-8 md:pt-10 lg:pt-14 pb-12 md:pb-16 lg:pb-24 overflow-hidden"
       aria-labelledby="consultation-heading"
     >
       <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-[#090909] to-transparent pointer-events-none" />
