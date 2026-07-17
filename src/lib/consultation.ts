@@ -2,13 +2,12 @@
  * Consultation Booking
  *
  * Central entry point for consultation CTAs across the site.
- * Connects to Calendly when configured, otherwise dispatches a
- * custom event for future backend / widget integration.
+ * Opens the official Calendly popup; redirect to /thank-you happens
+ * only after `calendly.event_scheduled` (see CalendlyProvider).
  */
 
-import { integrationsConfig } from "@/config";
 import { trackCTAClick } from "./analytics";
-import { getCalendlyUrl } from "./links";
+import { openCalendlyPopup } from "./calendly";
 
 export const CONSULTATION_REQUEST_EVENT = "jbuilttech:consultation-request";
 
@@ -17,27 +16,11 @@ export interface ConsultationRequestDetail {
 }
 
 /**
- * Open the consultation booking flow.
- *
- * Integration order:
- * 1. Calendly URL (when NEXT_PUBLIC_CALENDLY_URL is set)
- * 2. Custom event for app-level handlers (modal, API, etc.)
+ * Open the consultation booking flow via Calendly popup.
  */
 export function openConsultationBooking(source = "consultation_cta"): void {
   trackCTAClick("consultation", source);
-
-  const calendlyUrl = getCalendlyUrl();
-  if (calendlyUrl && integrationsConfig.calendly.enabled) {
-    const newWindow = window.open(calendlyUrl, "_blank");
-    if (newWindow) newWindow.opener = null;
-    return;
-  }
-
-  window.dispatchEvent(
-    new CustomEvent<ConsultationRequestDetail>(CONSULTATION_REQUEST_EVENT, {
-      detail: { source },
-    })
-  );
+  void openCalendlyPopup();
 }
 
 /**

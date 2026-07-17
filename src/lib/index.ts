@@ -1,8 +1,18 @@
 export { cn } from "./cn";
 export { env, type Env } from "./env";
-export { trackEvent, trackPageView, trackCTAClick, trackFormSubmit } from "./analytics";
+export { trackEvent, trackPageView, trackCTAClick, trackFormSubmit, pushDataLayerEvent, pushConsultationBookedEvent } from "./analytics";
 export { captureUTMParams, getStoredUTMParams, clearUTMParams, type UTMParams } from "./utm";
-export { getCalendlyUrl, getExternalLinkProps, CALENDLY_BOOKING_URL } from "./links";
+export {
+  getCalendlyUrl,
+  getExternalLinkProps,
+  CALENDLY_BOOKING_URL,
+  CALENDLY_REDIRECT_URL,
+} from "./links";
+export {
+  openCalendlyPopup,
+  isCalendlyEventScheduled,
+  CALENDLY_THANK_YOU_PATH,
+} from "./calendly";
 export {
   openConsultationBooking,
   onConsultationRequest,

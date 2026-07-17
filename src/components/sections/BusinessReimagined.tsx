@@ -169,7 +169,6 @@ export function BusinessReimagined() {
               <a
                 href="#consultation"
                 className="btn-primary"
-                data-calendly-trigger
               >
                 Start Building My Brand
               </a>

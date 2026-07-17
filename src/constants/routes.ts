@@ -37,6 +37,7 @@ export const ROUTES = {
   ABOUT: "/about",
   CONTACT: "/contact",
   CONSULTATION: "/consultation",
+  THANK_YOU: "/thank-you",
   
   // Legal
   PRIVACY: "/privacy",
@@ -45,7 +46,9 @@ export const ROUTES = {
   // Sections (anchor links)
   SECTION_STORY: "/#story",
   SECTION_CONSULTATION: "/#consultation",
-  SECTION_PORTFOLIO: "/#portfolio",
+  /** Creative work showcase lives in the Process section on the homepage */
+  SECTION_PORTFOLIO: "/#process",
+  SECTION_PROCESS: "/#process",
 } as const;
 
 export type Routes = typeof ROUTES;
