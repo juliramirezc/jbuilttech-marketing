@@ -3,6 +3,7 @@
 import { memo } from "react";
 import { motion, type MotionValue, useTransform } from "framer-motion";
 import { CALENDLY_BOOKING_URL, getExternalLinkProps } from "@/lib/links";
+import { pushDataLayerEvent } from "@/lib/analytics";
 
 interface HeroContentProps {
   scrollProgress: MotionValue<number>;
@@ -117,6 +118,7 @@ export const HeroContent = memo(function HeroContent({
             href={CALENDLY_BOOKING_URL}
             className="btn-primary"
             {...getExternalLinkProps()}
+            onClick={() => pushDataLayerEvent("hero_cta_click")}
           >
             Build My Brand
           </a>
