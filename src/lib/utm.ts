@@ -1,6 +1,6 @@
 /**
  * UTM Tracking Utilities
- * Capture and persist UTM parameters for attribution
+ * Capture and persist attribution parameters for first-touch attribution
  */
 
 export interface UTMParams {
@@ -9,14 +9,28 @@ export interface UTMParams {
   utm_campaign?: string;
   utm_term?: string;
   utm_content?: string;
+  gclid?: string;
+  fbclid?: string;
+  landing_page?: string;
   referrer?: string;
+  first_visit_timestamp?: string;
 }
 
 const UTM_STORAGE_KEY = "jbuilttech_utm";
-const UTM_PARAMS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"] as const;
+
+/** Query params captured into sessionStorage (first-touch) */
+const ATTRIBUTION_QUERY_KEYS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_term",
+  "utm_content",
+  "gclid",
+  "fbclid",
+] as const;
 
 /**
- * Capture UTM parameters from URL and store them (first-touch only).
+ * Capture attribution parameters from URL and store them (first-touch only).
  * Never overwrites existing sessionStorage values for this session.
  */
 export function captureUTMParams(): UTMParams | null {
@@ -28,21 +42,29 @@ export function captureUTMParams(): UTMParams | null {
   const searchParams = new URLSearchParams(window.location.search);
   const utmParams: UTMParams = {};
 
-  let hasUTM = false;
-  for (const param of UTM_PARAMS) {
+  let hasAttribution = false;
+  for (const param of ATTRIBUTION_QUERY_KEYS) {
     const value = searchParams.get(param);
     if (value) {
       utmParams[param] = value;
-      hasUTM = true;
+      hasAttribution = true;
     }
+  }
+
+  // First-touch landing page (path + search as visited)
+  const landingPage = `${window.location.pathname}${window.location.search}`;
+  if (landingPage) {
+    utmParams.landing_page = landingPage;
+    hasAttribution = true;
   }
 
   if (document.referrer && !document.referrer.includes(window.location.hostname)) {
     utmParams.referrer = document.referrer;
-    hasUTM = true;
+    hasAttribution = true;
   }
 
-  if (hasUTM) {
+  if (hasAttribution) {
+    utmParams.first_visit_timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
     try {
       sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(utmParams));
     } catch {

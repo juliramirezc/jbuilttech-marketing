@@ -4,6 +4,7 @@
  */
 
 import { analyticsConfig } from "@/config";
+import { getStoredUTMParams, type UTMParams } from "./utm";
 
 type EventParams = Record<string, string | number | boolean>;
 
@@ -15,6 +16,20 @@ declare global {
     __jbtConsultationBookedPushed?: boolean;
   }
 }
+
+/** Attribution keys included on consultation_booked when present in sessionStorage */
+const ATTRIBUTION_EVENT_KEYS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_term",
+  "utm_content",
+  "gclid",
+  "fbclid",
+  "landing_page",
+  "referrer",
+  "first_visit_timestamp",
+] as const satisfies ReadonlyArray<keyof UTMParams>;
 
 /**
  * Push a custom event to the GTM dataLayer.
@@ -33,6 +48,23 @@ export function pushDataLayerEvent(
 }
 
 /**
+ * Build attribution payload from sessionStorage — only include present values.
+ */
+function getAttributionEventParams(): EventParams {
+  const stored = getStoredUTMParams();
+  if (!stored) return {};
+
+  const params: EventParams = {};
+  for (const key of ATTRIBUTION_EVENT_KEYS) {
+    const value = stored[key];
+    if (typeof value === "string" && value.length > 0) {
+      params[key] = value;
+    }
+  }
+  return params;
+}
+
+/**
  * Fire the consultation booking conversion event exactly once per page load.
  * Used on /thank-you as the primary conversion signal for GTM.
  */
@@ -46,6 +78,7 @@ export function pushConsultationBookedEvent(): void {
   pushDataLayerEvent("consultation_booked", {
     conversion_source: "calendly",
     page_path: "/thank-you",
+    ...getAttributionEventParams(),
   });
 }
 
