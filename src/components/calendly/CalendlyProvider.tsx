@@ -7,6 +7,7 @@ import {
   isCalendlyEventScheduled,
   openCalendlyPopup,
 } from "@/lib/calendly";
+import { captureUTMParams } from "@/lib/utm";
 
 /**
  * Full-page navigation to the thank-you route on the current origin.
@@ -21,12 +22,18 @@ function navigateToThankYou(): void {
 /**
  * CalendlyProvider
  *
+ * - Captures first-touch UTM params once on app load
  * - Intercepts clicks on Calendly booking links and opens the official popup
  * - Redirects to /thank-you ONLY on `calendly.event_scheduled`
  * - Opening or closing the popup without booking does not redirect
  */
 export function CalendlyProvider({ children }: { children: ReactNode }) {
   const hasRedirectedRef = useRef(false);
+
+  // First-touch UTM capture — once on mount; never overwrites existing session values
+  useEffect(() => {
+    captureUTMParams();
+  }, []);
 
   // Post-booking redirect (official Calendly postMessage API)
   useEffect(() => {

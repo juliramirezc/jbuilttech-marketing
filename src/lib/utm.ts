@@ -16,10 +16,14 @@ const UTM_STORAGE_KEY = "jbuilttech_utm";
 const UTM_PARAMS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"] as const;
 
 /**
- * Capture UTM parameters from URL and store them
+ * Capture UTM parameters from URL and store them (first-touch only).
+ * Never overwrites existing sessionStorage values for this session.
  */
 export function captureUTMParams(): UTMParams | null {
   if (typeof window === "undefined") return null;
+
+  const existing = getStoredUTMParams();
+  if (existing) return existing;
 
   const searchParams = new URLSearchParams(window.location.search);
   const utmParams: UTMParams = {};
@@ -47,7 +51,7 @@ export function captureUTMParams(): UTMParams | null {
     return utmParams;
   }
 
-  return getStoredUTMParams();
+  return null;
 }
 
 /**
