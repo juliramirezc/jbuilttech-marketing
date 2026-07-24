@@ -1,6 +1,15 @@
 export { cn } from "./cn";
 export { env, type Env } from "./env";
-export { trackEvent, trackPageView, trackCTAClick, trackFormSubmit, pushDataLayerEvent, pushConsultationBookedEvent } from "./analytics";
+export {
+  trackEvent,
+  trackPageView,
+  trackCTAClick,
+  trackFormSubmit,
+  pushDataLayerEvent,
+  pushConsultationBookedEvent,
+  fireConsultationBookedOnce,
+  type ConsultationCustomerParams,
+} from "./analytics";
 export { captureUTMParams, getStoredUTMParams, clearUTMParams, type UTMParams } from "./utm";
 export {
   getCalendlyUrl,

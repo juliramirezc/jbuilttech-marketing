@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import { ROUTES } from "@/constants/routes";
-import { pushConsultationBookedEvent } from "@/lib/analytics";
+import { fireConsultationBookedOnce } from "@/lib/analytics";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -186,9 +186,9 @@ export function ThankYouContent() {
   const ctaRef = useRef<HTMLDivElement>(null);
   const ctaInView = useInView(ctaRef, { once: true, margin: "-60px" });
 
-  // GTM conversion event — fires exactly once per thank-you page load
+  // Enrich from Calendly invitee API, then fire consultation_booked once
   useEffect(() => {
-    pushConsultationBookedEvent();
+    void fireConsultationBookedOnce();
   }, []);
 
   const containerVariants = {
