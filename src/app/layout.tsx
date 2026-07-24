@@ -39,6 +39,11 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: {
+    other: {
+      "facebook-domain-verification": "k2n11dfl8rs5aqh5dam402j7fffsrg",
+    },
+  },
 };
 
 export const viewport: Viewport = {
