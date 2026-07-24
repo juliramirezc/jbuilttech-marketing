@@ -9,6 +9,40 @@ import {
 } from "@/lib/calendly";
 import { captureUTMParams } from "@/lib/utm";
 
+const CALENDLY_INVITEE_URI_KEY = "jbuilttech_calendly_invitee_uri";
+const CALENDLY_EVENT_URI_KEY = "jbuilttech_calendly_event_uri";
+
+/**
+ * Persist Calendly booking URIs from postMessage payload (no PII).
+ */
+function storeCalendlyBookingUris(data: unknown): void {
+  if (!data || typeof data !== "object") return;
+
+  const payload = (data as { payload?: unknown }).payload;
+  if (!payload || typeof payload !== "object") return;
+
+  const invitee = (payload as { invitee?: unknown }).invitee;
+  const scheduledEvent = (payload as { event?: unknown }).event;
+
+  try {
+    if (invitee && typeof invitee === "object") {
+      const uri = (invitee as { uri?: unknown }).uri;
+      if (typeof uri === "string" && uri.length > 0) {
+        sessionStorage.setItem(CALENDLY_INVITEE_URI_KEY, uri);
+      }
+    }
+
+    if (scheduledEvent && typeof scheduledEvent === "object") {
+      const uri = (scheduledEvent as { uri?: unknown }).uri;
+      if (typeof uri === "string" && uri.length > 0) {
+        sessionStorage.setItem(CALENDLY_EVENT_URI_KEY, uri);
+      }
+    }
+  } catch {
+    // sessionStorage unavailable
+  }
+}
+
 /**
  * Full-page navigation to the thank-you route on the current origin.
  * Uses assign() (not soft router.push) so GTM page_view / conversion
@@ -24,7 +58,7 @@ function navigateToThankYou(): void {
  *
  * - Captures first-touch UTM params once on app load
  * - Intercepts clicks on Calendly booking links and opens the official popup
- * - Redirects to /thank-you ONLY on `calendly.event_scheduled`
+ * - Stores invitee/event URIs on `calendly.event_scheduled`, then redirects to /thank-you
  * - Opening or closing the popup without booking does not redirect
  */
 export function CalendlyProvider({ children }: { children: ReactNode }) {
@@ -42,6 +76,7 @@ export function CalendlyProvider({ children }: { children: ReactNode }) {
       if (hasRedirectedRef.current) return;
 
       hasRedirectedRef.current = true;
+      storeCalendlyBookingUris(event.data);
       window.Calendly?.closePopupWidget?.();
       navigateToThankYou();
     };
