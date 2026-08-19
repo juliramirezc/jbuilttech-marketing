@@ -3,7 +3,7 @@
 import { memo, type ReactNode } from "react";
 import { motion, type MotionValue, useTransform } from "framer-motion";
 import Image from "next/image";
-import { CALENDLY_BOOKING_URL, getExternalLinkProps } from "@/lib/links";
+import { ConversionCta, useLeadModal } from "@/components/lead";
 import { MOBILE_HERO_IMAGES } from "./mobile/constants";
 import { MOBILE_DIGITAL_STORY } from "./mobile/scrollThresholds";
 import { useScrollReveal } from "./mobile/useScrollReveal";
@@ -130,6 +130,7 @@ export const DigitalPresenceMobileLayer = memo(function DigitalPresenceMobileLay
   scrollProgress,
   reducedMotion,
 }: DigitalPresenceMobileLayerProps) {
+  const { openLeadModal } = useLeadModal();
   const {
     layerFade,
     contentScrollStart,
@@ -382,11 +383,10 @@ export const DigitalPresenceMobileLayer = memo(function DigitalPresenceMobileLay
               <span className="text-gold-gradient">Your Business.</span>
             </h3>
             <p className="text-sm text-white/85 font-light mb-1">
-              You already build incredible projects.
+              You already did the work.
             </p>
             <p className="text-xs sm:text-sm text-white/60 font-light mb-8 leading-relaxed max-w-xs mx-auto">
-              Now let homeowners experience that same quality before they ever
-              call.
+              Now make sure homeowners can find it.
             </p>
 
             <motion.div
@@ -397,14 +397,9 @@ export const DigitalPresenceMobileLayer = memo(function DigitalPresenceMobileLay
                 filter: buttonReveal.filter,
               }}
             >
-              <a
-                href={CALENDLY_BOOKING_URL}
-                className="hero-final-cta"
-                data-calendly-trigger
-                {...getExternalLinkProps()}
-              >
-                Build My Brand
-              </a>
+              <ConversionCta onClick={() => openLeadModal("hero_launch")}>
+                GET MY COMPANY FOUND
+              </ConversionCta>
             </motion.div>
           </motion.footer>
         </div>

@@ -1,0 +1,1 @@
+export { CompetitorSection } from "./CompetitorSection";

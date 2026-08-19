@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useRef } from "react";
 import { motion, type MotionValue, useInView, useTransform } from "framer-motion";
-import { CALENDLY_BOOKING_URL, getExternalLinkProps } from "@/lib/links";
+import { ConversionCta, useLeadModal } from "@/components/lead";
 import { PROCESS_SHOWCASE_VIDEOS } from "@/components/sections/process/mobile/constants";
 
 interface DigitalPresenceDesktopLayerProps {
@@ -98,6 +98,8 @@ export const DigitalPresenceDesktopLayer = memo(function DigitalPresenceDesktopL
   scrollProgress,
   reducedMotion,
 }: DigitalPresenceDesktopLayerProps) {
+  const { openLeadModal } = useLeadModal();
+
   const mockupsOpacity = useTransform(
     scrollProgress,
     [0.65, 0.75],
@@ -243,10 +245,10 @@ export const DigitalPresenceDesktopLayer = memo(function DigitalPresenceDesktopL
               }}
             >
               <p className="text-base sm:text-lg md:text-xl text-white/90 mb-2 font-light">
-                You already build incredible projects.
+                You already did the work.
               </p>
               <p className="text-sm sm:text-base md:text-lg text-white/70 mb-10 font-light max-w-lg mx-auto leading-relaxed">
-                Now build a brand that homeowners trust before they ever call.
+                Now make sure homeowners can find it.
               </p>
             </motion.div>
 
@@ -258,14 +260,9 @@ export const DigitalPresenceDesktopLayer = memo(function DigitalPresenceDesktopL
                 filter: useTransform(buttonBlur, (v) => `blur(${v}px)`),
               }}
             >
-              <a
-                href={CALENDLY_BOOKING_URL}
-                className="hero-final-cta"
-                data-calendly-trigger
-                {...getExternalLinkProps()}
-              >
-                Build My Brand
-              </a>
+              <ConversionCta onClick={() => openLeadModal("hero_launch")}>
+                GET MY COMPANY FOUND
+              </ConversionCta>
             </motion.div>
           </div>
         </div>

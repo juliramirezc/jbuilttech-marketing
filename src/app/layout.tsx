@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { GoogleTagManager } from "@next/third-parties/google";
 import { CalendlyProvider } from "@/components/calendly";
+import { LeadProvider } from "@/components/lead";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -64,7 +65,9 @@ export default function RootLayout({
         {/* Subtle noise texture for premium feel */}
         <div className="noise-overlay" aria-hidden="true" />
 
-        <CalendlyProvider>{children}</CalendlyProvider>
+        <CalendlyProvider>
+          <LeadProvider>{children}</LeadProvider>
+        </CalendlyProvider>
       </body>
     </html>
   );

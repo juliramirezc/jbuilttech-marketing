@@ -43,25 +43,6 @@ const WebsiteIcon = () => (
   </svg>
 );
 
-const SocialIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-    <path d="M6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-    <path d="M18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-    <path d="m8.59 13.51 6.83 3.98" />
-    <path d="m15.41 6.51-6.82 3.98" />
-  </svg>
-);
-
-const GoogleIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" />
-    <path d="m21 21-4.35-4.35" />
-    <path d="M11 8v6" />
-    <path d="M8 11h6" />
-  </svg>
-);
-
 const GrowthIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 17l6-6 4 4 8-8" />
@@ -78,37 +59,29 @@ const PROCESS_STEPS: ProcessStep[] = [
   {
     id: 1,
     title: "Blueprint",
-    description: "We study your company, your market, and your competitors before designing anything.",
+    description:
+      "You already do good work. We map where homeowners look — and where your company is invisible.",
     icon: <BlueprintIcon />,
   },
   {
     id: 2,
-    title: "Brand Identity",
-    description: "We create a professional brand that reflects the quality of your craftsmanship.",
+    title: "Build",
+    description:
+      "We put your real projects where homeowners search, click, and call.",
     icon: <BrandIcon />,
   },
   {
     id: 3,
-    title: "Website",
-    description: "A premium website that earns trust before the first phone call.",
+    title: "Finish",
+    description:
+      "Your website, profiles, and content show the quality of your crew before the first call.",
     icon: <WebsiteIcon />,
   },
   {
     id: 4,
-    title: "Social Media",
-    description: "Consistent content keeps your company visible and memorable.",
-    icon: <SocialIcon />,
-  },
-  {
-    id: 5,
-    title: "Google Visibility",
-    description: "Google Business Profile, SEO, reviews, and local visibility working together.",
-    icon: <GoogleIcon />,
-  },
-  {
-    id: 6,
-    title: "Growth",
-    description: "More Trust. More Qualified Leads. More Projects.",
+    title: "Launch",
+    description:
+      "More homeowners find you. More chances to win the next job.",
     icon: <GrowthIcon />,
   },
 ];
@@ -156,7 +129,7 @@ export function ProcessSection() {
     <section
       ref={sectionRef}
       id="process"
-      className="relative py-10 md:py-14 lg:py-24 bg-[#090909] overflow-hidden"
+      className="relative py-8 md:py-10 lg:py-14 bg-[#090909] overflow-hidden"
       aria-labelledby="process-heading"
     >
       {/* Subtle top fade from Hero */}
@@ -165,10 +138,10 @@ export function ProcessSection() {
       <div className="container-luxury relative z-10">
         <div className="hidden lg:block">
           <SectionHeader
-            caption="Our Process"
-            title="We Build Your Brand the Same Way You Build a Home."
-            titleHighlight="Build a Home"
-            description="Every successful contractor starts with a plan. We do exactly the same for your business. From blueprint to growth, every step is intentionally designed to earn trust before your customer ever calls."
+            caption="How we help"
+            title="You Already Did the Work. Now Get Found."
+            titleHighlight="Get Found"
+            description="We don't ask you to become a marketer. We help homeowners see the jobs you already finish — so your company gets the next opportunity."
             reducedMotion={reducedMotion}
           />
 

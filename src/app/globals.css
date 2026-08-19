@@ -13,6 +13,10 @@
     --color-gold: 212 175 55;
     --color-gold-light: 241 208 99;
     --color-gold-dark: 165 130 40;
+
+    /* Conversion CTA (yellow → green hover) */
+    --color-cta-yellow: 245 200 66;
+    --color-cta-green: 34 160 84;
     
     /* Blueprint accent (subtle) */
     --color-blueprint: 59 130 180;
@@ -287,6 +291,83 @@
   .btn-secondary:hover {
     border-color: rgb(var(--color-foreground) / 0.5);
     background: rgb(var(--color-foreground) / 0.05);
+  }
+
+  /* Dominant conversion CTA — yellow default, green hover + scale */
+  .btn-conversion {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.15rem 2.25rem;
+    font-family: var(--font-body);
+    font-size: clamp(0.95rem, 2.4vw, 1.125rem);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    text-align: center;
+    color: rgb(11 11 11);
+    background: rgb(var(--color-cta-yellow));
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    text-decoration: none;
+    transform: translateZ(0);
+    will-change: transform, background-color, box-shadow;
+    transition:
+      transform 250ms var(--ease-out-expo),
+      background-color 250ms var(--ease-out-expo),
+      box-shadow 250ms var(--ease-out-expo);
+    box-shadow: 0 10px 28px rgb(var(--color-cta-yellow) / 0.28);
+  }
+
+  .btn-conversion:hover:not(:disabled) {
+    background: rgb(var(--color-cta-green));
+    transform: scale(1.05);
+    box-shadow: 0 14px 34px rgb(var(--color-cta-green) / 0.32);
+  }
+
+  .btn-conversion:active:not(:disabled) {
+    transform: scale(1.02);
+  }
+
+  .btn-conversion:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  /* Subtle attention pulse — not spammy; paused on hover */
+  .btn-conversion--pulse {
+    animation: cta-float-pulse 2.8s ease-in-out infinite;
+  }
+
+  .btn-conversion--pulse:hover:not(:disabled) {
+    animation: none;
+  }
+
+  @keyframes cta-float-pulse {
+    0%,
+    100% {
+      transform: translateY(0);
+      box-shadow: 0 10px 28px rgb(var(--color-cta-yellow) / 0.28);
+    }
+    50% {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 34px rgb(var(--color-cta-yellow) / 0.4);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn-conversion,
+    .btn-conversion:hover:not(:disabled),
+    .btn-conversion:active:not(:disabled) {
+      transition: background-color 150ms ease;
+      transform: none;
+    }
+
+    .btn-conversion--pulse,
+    .btn-conversion--pulse:hover:not(:disabled) {
+      animation: none;
+    }
   }
 
   /* Cinematic image container */

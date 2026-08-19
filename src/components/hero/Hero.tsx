@@ -29,9 +29,9 @@ import {
  */
 
 /**
- * Scroll runway:
- * - Mobile (<lg): 300vh — Blueprint → Digital Presence (no Framing / Finished Home)
- * - Desktop (lg+): 400vh — full Blueprint → Framing → Finished Home → Digital story
+ * Scroll runway (compressed for faster conversion understanding):
+ * - Mobile (<lg): 180vh — Blueprint → Digital Presence
+ * - Desktop (lg+): 220vh — full Blueprint → Framing → Finished Home → Digital story
  */
 export function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -67,7 +67,7 @@ export function Hero() {
   return (
     <section
       ref={containerRef}
-      className="relative h-[300vh] lg:h-[400vh]"
+      className="relative h-[180vh] lg:h-[220vh]"
       aria-label="Hero section - Watch a contractor brand being built"
     >
       {/* Sticky viewport - stays fixed while user scrolls through */}
