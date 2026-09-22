@@ -1,0 +1,3 @@
+# Static newsletter image hosting only.
+# Files here are publicly served at /newsletter-assets/<filename>
+# Do not import these into React components or link them from site pages.
