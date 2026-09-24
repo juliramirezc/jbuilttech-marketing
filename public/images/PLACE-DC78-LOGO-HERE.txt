@@ -1,0 +1,6 @@
+Drop the official transparent DC 78 PNG here and name it exactly:
+
+dc78-logo.png
+
+Served at: /images/dc78-logo.png
+Referenced by: /dc78/member-story

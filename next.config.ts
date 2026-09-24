@@ -6,6 +6,7 @@ const projectRoot = path.join(__dirname);
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  serverExternalPackages: ["googleapis", "postmark"],
   // Pin file tracing to this app (npm run build)
   outputFileTracingRoot: projectRoot,
   // Pin Turbopack module resolution root (npm run dev --turbopack)

@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import { LeadModal } from "./LeadModal";
 import { ReferralDelayPopup } from "./ReferralDelayPopup";
 import { pushDataLayerEvent } from "@/lib/analytics";
@@ -61,6 +62,11 @@ function writeSessionFlag(key: string): void {
 }
 
 export function LeadProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  /** Member-story and other /dc78 routes must not show marketing referral promo */
+  const suppressReferralPromo =
+    typeof pathname === "string" && pathname.startsWith("/dc78");
+
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [modalSource, setModalSource] = useState<LeadFormSource>("hero_primary");
   const [hasSubmittedLead, setHasSubmittedLead] = useState(false);
@@ -84,6 +90,10 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     isLeadFormFocusedRef.current = isLeadFormFocused;
   }, [isLeadFormFocused]);
+
+  useEffect(() => {
+    if (suppressReferralPromo) setShowReferralPopup(false);
+  }, [suppressReferralPromo]);
 
   const setLeadFormFocused = useCallback((focused: boolean) => {
     setIsLeadFormFocused(focused);
@@ -121,12 +131,14 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     pushDataLayerEvent("referral_popup_dismissed");
   }, []);
 
-  // Delayed referral popup — once per session if no lead yet and form not active
+  // Delayed referral popup — homepage/marketing only (not /dc78)
   useEffect(() => {
     if (!hydrated) return;
+    if (suppressReferralPromo) return;
     if (hasSubmittedLead || referralDismissed) return;
 
     const timer = window.setTimeout(() => {
+      if (suppressReferralPromo) return;
       if (readSessionFlag(LEAD_SUBMITTED_KEY)) return;
       if (readSessionFlag(REFERRAL_DISMISSED_KEY)) return;
       if (isLeadModalOpenRef.current) return;
@@ -139,7 +151,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     }, REFERRAL_DELAY_MS);
 
     return () => window.clearTimeout(timer);
-  }, [hydrated, hasSubmittedLead, referralDismissed]);
+  }, [hydrated, hasSubmittedLead, referralDismissed, suppressReferralPromo]);
 
   useEffect(() => {
     if (isLeadModalOpen || isLeadFormFocused) setShowReferralPopup(false);
@@ -180,6 +192,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       />
       <ReferralDelayPopup
         open={
+          !suppressReferralPromo &&
           showReferralPopup &&
           !isLeadModalOpen &&
           !isLeadFormFocused &&

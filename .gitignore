@@ -1,19 +1,32 @@
 # Dependencies
 node_modules/
 
-# Next.js
+# Next.js / build
 .next/
 out/
-
-# Production
 build/
 dist/
 
-# Environment variables
+# Environment & secrets (never commit)
 .env
-.env.local
-.env.development.local
-.env.production.local
+.env.*
+!.env.example
+*.pem
+*credentials*.json
+*service-account*.json
+google-credentials*.json
+
+# Member uploads / private data (repo root only — not src/app/api/uploads)
+/uploads/
+/*.csv
+!/sample*.csv
+.tmp/
+tmp/
+/data/private/
+
+# Handoff archives and local unpack folders (not for production deploy)
+*.zip
+/dc78-member-story-cursor-handoff/
 
 # Logs
 npm-debug.log*
@@ -23,9 +36,7 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 
-# OS
+# OS / Vercel
 .DS_Store
 Thumbs.db
-
-# Vercel
 .vercel/
