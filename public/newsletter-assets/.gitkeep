@@ -3,6 +3,7 @@
 # Do not import these into React components or link them from site pages.
 #
 # Current hosted assets (update Postmark template URLs if renamed):
+#   /newsletter-assets/dr-allen-jones.png
 #   /newsletter-assets/dr-allen-jones-v2.png
 #   /newsletter-assets/union-stands-up.jpg
 #   /newsletter-assets/voting-rights-video.png
