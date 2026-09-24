@@ -7,20 +7,51 @@ const ALLOWED_FOLDERS = new Set([MEMBER_STORY_FOLDER]);
 
 export { MEMBER_STORY_FOLDER, MEMBER_STORY_SHEET_TITLE, ALLOWED_FOLDERS };
 
+/** Required Google Drive env var names (values never returned). */
+export const REQUIRED_GOOGLE_ENV = [
+  "GOOGLE_SERVICE_ACCOUNT_EMAIL",
+  "GOOGLE_PRIVATE_KEY",
+  "GOOGLE_SHARED_DRIVE_ID",
+] as const;
+
+export function getMissingGoogleEnvNames(): string[] {
+  return REQUIRED_GOOGLE_ENV.filter((name) => {
+    const value = process.env[name]?.trim();
+    return !value;
+  });
+}
+
+/**
+ * Fail fast with missing env NAMES only — never include secret values.
+ */
+export function assertGoogleDriveConfigured(): void {
+  const missing = getMissingGoogleEnvNames();
+  if (missing.length > 0) {
+    throw new Error(
+      `Google Drive is not configured on the server (missing: ${missing.join(", ")}).`
+    );
+  }
+}
+
 function getPrivateKey(): string {
-  const raw = process.env.GOOGLE_PRIVATE_KEY?.trim();
-  if (!raw) throw new Error("GOOGLE_PRIVATE_KEY is not configured");
+  assertGoogleDriveConfigured();
+  const raw = process.env.GOOGLE_PRIVATE_KEY!.trim();
   return raw.replace(/\\n/g, "\n");
 }
 
 function getServiceAccountEmail(): string {
-  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim();
-  if (!email) throw new Error("GOOGLE_SERVICE_ACCOUNT_EMAIL is not configured");
-  return email;
+  assertGoogleDriveConfigured();
+  return process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!.trim();
 }
 
-function getSharedDriveId(): string | undefined {
-  return process.env.GOOGLE_SHARED_DRIVE_ID?.trim() || undefined;
+function getSharedDriveId(): string {
+  const id = process.env.GOOGLE_SHARED_DRIVE_ID?.trim();
+  if (!id) {
+    throw new Error(
+      "Google Drive is not configured on the server (missing: GOOGLE_SHARED_DRIVE_ID)."
+    );
+  }
+  return id;
 }
 
 export function getGoogleAuth(scopes: string[]) {

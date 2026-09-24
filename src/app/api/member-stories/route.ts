@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import {
   appendMemberStoryRow,
+  assertGoogleDriveConfigured,
   driveFileUrl,
   driveFolderUrl,
   ensureMemberStorySheet,
+  getMissingGoogleEnvNames,
   resolveMemberStorySubmissionFolder,
   submissionAlreadyRecorded,
   writeSubmissionJson,
@@ -17,6 +19,11 @@ import {
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+function isConfigError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes("not configured") || msg.includes("missing:");
+}
 
 export async function POST(request: Request) {
   const ip = clientIp(request);
@@ -57,6 +64,8 @@ export async function POST(request: Request) {
     "Member";
 
   try {
+    assertGoogleDriveConfigured();
+
     const { rootFolderId, submissionFolderId } =
       await resolveMemberStorySubmissionFolder(data.submissionId);
     const { spreadsheetId, sheetUrl } =
@@ -172,14 +181,18 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error("[member-stories]", err);
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Could not save member story submission";
+    const configMissing = isConfigError(err);
     return NextResponse.json(
       {
-        error:
-          err instanceof Error
-            ? err.message
-            : "Could not save member story submission",
+        error: message,
+        code: configMissing ? "google_config_missing" : "member_story_save_failed",
+        missingEnv: configMissing ? getMissingGoogleEnvNames() : undefined,
       },
-      { status: 502 }
+      { status: configMissing ? 503 : 502 }
     );
   }
 }

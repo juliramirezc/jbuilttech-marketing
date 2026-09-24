@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import {
+  assertGoogleDriveConfigured,
+  getMissingGoogleEnvNames,
   resolveAllowlistedUploadParent,
   startResumableUpload,
   sanitizeFileName,
@@ -15,6 +17,15 @@ import {
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+function isConfigError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return (
+    msg.includes("not configured") ||
+    msg.includes("missing:") ||
+    getMissingGoogleEnvNames().length > 0
+  );
+}
 
 export async function POST(request: Request) {
   const ip = clientIp(request);
@@ -46,6 +57,8 @@ export async function POST(request: Request) {
   }
 
   try {
+    assertGoogleDriveConfigured();
+
     const parentFolderId = await resolveAllowlistedUploadParent({
       folderName: data.folderName,
       formType: data.formType,
@@ -68,12 +81,16 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error("[uploads/init]", err);
+    const message =
+      err instanceof Error ? err.message : "Could not start upload session";
+    const status = isConfigError(err) ? 503 : 502;
     return NextResponse.json(
       {
-        error:
-          err instanceof Error ? err.message : "Could not start upload session",
+        error: message,
+        code: isConfigError(err) ? "google_config_missing" : "upload_init_failed",
+        missingEnv: isConfigError(err) ? getMissingGoogleEnvNames() : undefined,
       },
-      { status: 502 }
+      { status }
     );
   }
 }

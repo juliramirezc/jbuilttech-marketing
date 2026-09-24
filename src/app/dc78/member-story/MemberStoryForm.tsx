@@ -143,6 +143,24 @@ export function MemberStoryForm() {
     if (text) setProgressText(text);
   }
 
+  async function readApiError(response: Response, fallback: string) {
+    try {
+      const data = (await response.json()) as {
+        error?: string;
+        missingEnv?: string[];
+      };
+      if (data.error) {
+        if (data.missingEnv?.length) {
+          return `${data.error}`;
+        }
+        return data.error;
+      }
+    } catch {
+      /* ignore non-JSON */
+    }
+    return fallback;
+  }
+
   async function initUpload(file: File, submissionId: string) {
     const response = await fetch("/api/uploads/init", {
       method: "POST",
@@ -162,10 +180,18 @@ export function MemberStoryForm() {
         submissionId,
       }),
     });
-    if (!response.ok) throw new Error(`Could not start upload for ${file.name}.`);
+    if (!response.ok) {
+      const detail = await readApiError(
+        response,
+        `Could not start upload for ${file.name} (HTTP ${response.status}).`
+      );
+      throw new Error(detail);
+    }
     const data = await response.json();
     if (!data.success || !data.uploadUrl || !data.uploadId) {
-      throw new Error(`Upload session was not created for ${file.name}.`);
+      throw new Error(
+        data.error || `Upload session was not created for ${file.name}.`
+      );
     }
     return data as { uploadUrl: string; uploadId: string };
   }
@@ -269,7 +295,11 @@ export function MemberStoryForm() {
       }),
     });
     if (!response.ok) {
-      throw new Error("Your story could not be saved. Please try again.");
+      const detail = await readApiError(
+        response,
+        "Your story could not be saved. Please try again."
+      );
+      throw new Error(detail);
     }
   }
 
