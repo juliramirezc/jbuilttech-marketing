@@ -1,80 +1,34 @@
 import { google, type drive_v3, type sheets_v4 } from "googleapis";
 import { Readable } from "stream";
+import {
+  assertGoogleDriveConfigured,
+  getGoogleAccessToken,
+  getGoogleAuthClient,
+  getMissingGoogleEnvNames,
+  getSharedDriveId,
+  REQUIRED_GCP_WIF_ENV,
+} from "@/lib/googleAuth";
 
 const MEMBER_STORY_FOLDER = "Member-newsletter-stories";
 const MEMBER_STORY_SHEET_TITLE = "DC78 Member Story Submissions";
 const ALLOWED_FOLDERS = new Set([MEMBER_STORY_FOLDER]);
 
-export { MEMBER_STORY_FOLDER, MEMBER_STORY_SHEET_TITLE, ALLOWED_FOLDERS };
-
-/** Required Google Drive env var names (values never returned). */
-export const REQUIRED_GOOGLE_ENV = [
-  "GOOGLE_SERVICE_ACCOUNT_EMAIL",
-  "GOOGLE_PRIVATE_KEY",
-  "GOOGLE_SHARED_DRIVE_ID",
-] as const;
-
-export function getMissingGoogleEnvNames(): string[] {
-  return REQUIRED_GOOGLE_ENV.filter((name) => {
-    const value = process.env[name]?.trim();
-    return !value;
-  });
-}
-
-/**
- * Fail fast with missing env NAMES only — never include secret values.
- */
-export function assertGoogleDriveConfigured(): void {
-  const missing = getMissingGoogleEnvNames();
-  if (missing.length > 0) {
-    throw new Error(
-      `Google Drive is not configured on the server (missing: ${missing.join(", ")}).`
-    );
-  }
-}
-
-function getPrivateKey(): string {
-  assertGoogleDriveConfigured();
-  const raw = process.env.GOOGLE_PRIVATE_KEY!.trim();
-  return raw.replace(/\\n/g, "\n");
-}
-
-function getServiceAccountEmail(): string {
-  assertGoogleDriveConfigured();
-  return process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!.trim();
-}
-
-function getSharedDriveId(): string {
-  const id = process.env.GOOGLE_SHARED_DRIVE_ID?.trim();
-  if (!id) {
-    throw new Error(
-      "Google Drive is not configured on the server (missing: GOOGLE_SHARED_DRIVE_ID)."
-    );
-  }
-  return id;
-}
-
-export function getGoogleAuth(scopes: string[]) {
-  return new google.auth.JWT({
-    email: getServiceAccountEmail(),
-    key: getPrivateKey(),
-    scopes,
-  });
-}
+export {
+  MEMBER_STORY_FOLDER,
+  MEMBER_STORY_SHEET_TITLE,
+  ALLOWED_FOLDERS,
+  assertGoogleDriveConfigured,
+  getMissingGoogleEnvNames,
+  REQUIRED_GCP_WIF_ENV as REQUIRED_GOOGLE_ENV,
+};
 
 export function getDriveClient(): drive_v3.Drive {
-  const auth = getGoogleAuth([
-    "https://www.googleapis.com/auth/drive",
-    "https://www.googleapis.com/auth/spreadsheets",
-  ]);
+  const auth = getGoogleAuthClient();
   return google.drive({ version: "v3", auth });
 }
 
 export function getSheetsClient(): sheets_v4.Sheets {
-  const auth = getGoogleAuth([
-    "https://www.googleapis.com/auth/drive",
-    "https://www.googleapis.com/auth/spreadsheets",
-  ]);
+  const auth = getGoogleAuthClient();
   return google.sheets({ version: "v4", auth });
 }
 
@@ -234,14 +188,7 @@ export async function startResumableUpload(options: {
 }
 
 async function getAccessToken(): Promise<string> {
-  const auth = getGoogleAuth([
-    "https://www.googleapis.com/auth/drive",
-    "https://www.googleapis.com/auth/spreadsheets",
-  ]);
-  const token = await auth.getAccessToken();
-  const value = typeof token === "string" ? token : token?.token;
-  if (!value) throw new Error("Could not obtain Google access token");
-  return value;
+  return getGoogleAccessToken();
 }
 
 export function sanitizeFileName(name: string): string {
