@@ -1,6 +1,8 @@
-# Static newsletter image/video hosting only.
+# Static newsletter image/video hosting only (Postmark HTML emails).
 # Files here are publicly served at /newsletter-assets/<filename>
-# Do not import these into React components or link them from site pages.
+# Do not import these into React components or link them from site pages,
+# navigation, sitemap, or the newsletter dashboard.
+# Do not add a directory listing or index page for this folder.
 #
 # Current hosted assets (update Postmark template URLs if renamed):
 #   /newsletter-assets/dr-allen-jones.png
@@ -8,3 +10,4 @@
 #   /newsletter-assets/union-stands-up.jpg
 #   /newsletter-assets/voting-rights-video.png
 #   /newsletter-assets/SB.mp4
+#   /newsletter-assets/dollarAsset.png
