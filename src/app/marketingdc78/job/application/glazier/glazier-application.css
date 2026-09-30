@@ -114,28 +114,6 @@
   margin-bottom: 22px;
 }
 
-.glaz-page .logo-stage::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 240px;
-  height: 240px;
-  margin: -120px 0 0 -120px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 212, 0, 0.28) 0%,
-    rgba(255, 212, 0, 0.14) 38%,
-    rgba(255, 212, 0, 0.05) 62%,
-    transparent 75%
-  );
-  filter: blur(18px);
-  pointer-events: none;
-  z-index: 0;
-  animation: glazLogoGlowPulse 3.6s ease-in-out infinite;
-}
-
 .glaz-page .logo-flip {
   width: 210px;
   height: 210px;
@@ -154,13 +132,39 @@
   -webkit-backface-visibility: hidden;
   border: 1px solid rgba(255, 212, 0, 0.25);
   background: #0e1117;
-  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.32), 0 0 50px rgba(255, 212, 0, 0.08);
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.32);
   display: grid;
   place-items: center;
   padding: 22px;
 }
 
+/* Soft yellow aura behind the logo figure (not the square stage) */
+.glaz-page .logo-front::before,
+.glaz-page .logo-back::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 58%;
+  height: 58%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 212, 0, 0.36) 0%,
+    rgba(255, 212, 0, 0.18) 34%,
+    rgba(255, 212, 0, 0.07) 56%,
+    transparent 74%
+  );
+  filter: blur(14px);
+  pointer-events: none;
+  z-index: 0;
+  transform: translate(-50%, -50%) scale(0.96);
+  animation: glazLogoGlowPulse 3.6s ease-in-out infinite;
+}
+
 .glaz-page .logo-front img {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -172,6 +176,11 @@
   background:
     radial-gradient(circle at 50% 20%, rgba(255, 212, 0, 0.13), transparent 46%),
     #0e1117;
+}
+
+.glaz-page .logo-back > div {
+  position: relative;
+  z-index: 1;
 }
 
 .glaz-page .dc78-mark {
@@ -207,12 +216,12 @@
 @keyframes glazLogoGlowPulse {
   0%,
   100% {
-    opacity: 0.72;
-    transform: scale(0.96);
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(0.96);
   }
   50% {
     opacity: 1;
-    transform: scale(1.04);
+    transform: translate(-50%, -50%) scale(1.05);
   }
 }
 
@@ -574,10 +583,10 @@
   .glaz-page .logo-stage {
     min-height: 230px;
   }
-  .glaz-page .logo-stage::before {
-    width: 210px;
-    height: 210px;
-    margin: -105px 0 0 -105px;
+  .glaz-page .logo-front::before,
+  .glaz-page .logo-back::before {
+    width: 56%;
+    height: 56%;
   }
   .glaz-page .logo-flip {
     width: 185px;
@@ -637,9 +646,10 @@
     transition-duration: 0.001ms !important;
   }
 
-  .glaz-page .logo-stage::before {
+  .glaz-page .logo-front::before,
+  .glaz-page .logo-back::before {
     animation: none;
-    opacity: 0.78;
-    transform: none;
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1);
   }
 }
