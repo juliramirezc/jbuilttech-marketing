@@ -100,6 +100,15 @@ async function findOrCreateFolder(
   return createFolder(drive, name, parentId);
 }
 
+/** Exported for reusable Shared Drive folder resolution (e.g. Geofences). */
+export async function findOrCreateSharedDriveFolder(
+  name: string,
+  parentId?: string
+): Promise<string> {
+  const drive = getDriveClient();
+  return findOrCreateFolder(drive, name, parentId);
+}
+
 /**
  * Resolve Member-newsletter-stories root (allowlisted), then submissionId child.
  */

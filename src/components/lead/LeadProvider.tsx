@@ -65,7 +65,8 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   /** Member-story and other /dc78 routes must not show marketing referral promo */
   const suppressReferralPromo =
-    typeof pathname === "string" && pathname.startsWith("/dc78");
+    typeof pathname === "string" &&
+    (pathname.startsWith("/dc78") || pathname.startsWith("/marketingdc78"));
 
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [modalSource, setModalSource] = useState<LeadFormSource>("hero_primary");
