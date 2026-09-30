@@ -170,7 +170,7 @@ export function GlazierApplicationForm() {
               </div>
 
               <div className="eyebrow">Glazing Opportunities</div>
-              <h1>Apply to Work for Glazing!</h1>
+              <h1>Apply to Work as a Glazier</h1>
               <p className="hero-copy">
                 Complete the application so our team can contact you about the
                 opportunity and the next steps.
