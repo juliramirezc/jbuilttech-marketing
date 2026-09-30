@@ -1,0 +1,4 @@
+/* Hide site-wide noise overlay on this standalone application page */
+body .noise-overlay {
+  display: none !important;
+}

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { GlazierApplicationForm } from "./GlazierApplicationForm";
 
 export const metadata: Metadata = {
-  title: "Apply to Work for Glazing | DC 78",
+  title: "Apply to Work for Glazing! | IUPAT District Council 78",
   description:
-    "Apply for a glazing career opportunity with District Council 78. $45.09/hour including benefits.",
+    "Complete the application so our team can contact you about the glazing opportunity and next steps. $45.09/hour including benefits.",
   robots: {
     index: false,
     follow: false,

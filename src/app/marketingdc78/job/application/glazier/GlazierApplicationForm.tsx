@@ -7,14 +7,36 @@ import {
 } from "@/lib/geofenceForms";
 import "./glazier-application.css";
 
+const BRAND_IMAGE = "/images/dc78-logo.png";
+const BRAND_FALLBACK_IMAGE =
+  "https://img1.wsimg.com/isteam/ip/3546aeda-652b-4ef2-b76c-731b538bafca/IUPAT%20Website%20Banner-0001.jpg/%3A/";
+
+const EXPERIENCE_LENGTH_LABELS: Record<string, string> = {
+  "0-3 months": "0–3 months",
+  "6 months": "6 months",
+  "1 year": "1 year",
+  "3 years": "3 years",
+  "5 years": "5 years",
+  "More than 5 years": "More than 5 years",
+};
+
+const CALL_AVAILABILITY_LABELS: Record<string, string> = {
+  "Morning (8:00 AM - 11:00 AM)": "Morning — 8:00 AM to 11:00 AM",
+  "Midday (11:00 AM - 2:00 PM)": "Midday — 11:00 AM to 2:00 PM",
+  "Afternoon (2:00 PM - 5:00 PM)": "Afternoon — 2:00 PM to 5:00 PM",
+  "Evening (5:00 PM - 7:00 PM)": "Evening — 5:00 PM to 7:00 PM",
+  "Flexible / Any time": "Flexible / Any time",
+};
+
 function createSubmissionId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
-  return `glazier-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  return `glazing-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export function GlazierApplicationForm() {
+  const [logoSrc, setLogoSrc] = useState(BRAND_IMAGE);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -31,6 +53,12 @@ export function GlazierApplicationForm() {
   function onExperienceChange(value: "Yes" | "No") {
     setHasTradeExperience(value);
     if (value === "No") setExperienceLength("");
+  }
+
+  function onLogoError() {
+    setLogoSrc((current) =>
+      current !== BRAND_FALLBACK_IMAGE ? BRAND_FALLBACK_IMAGE : current
+    );
   }
 
   async function onSubmit(e: FormEvent) {
@@ -78,7 +106,6 @@ export function GlazierApplicationForm() {
           experienceLength:
             hasTradeExperience === "Yes" ? experienceLength : "",
           callAvailability,
-          // Client may include these; server forces authoritative values
           trade: "Glazing",
           sheetTab: "Glaziers",
           source: "paid ad",
@@ -91,217 +118,299 @@ export function GlazierApplicationForm() {
         setError(
           typeof data.error === "string"
             ? data.error
-            : "We could not submit your application. Please try again."
+            : "Your application could not be submitted. Please try again."
         );
         return;
       }
 
       setSuccess(true);
     } catch {
-      setError("We could not submit your application. Please try again.");
+      setError("Something went wrong. Please try again.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <main className="glaz-page">
-      <div className="glaz-inner">
-        <div className="glaz-brand">
-          <span className="dot" /> District Council 78 · Glazing careers
+    <div className="glaz-page">
+      <main className="page">
+        <div className="topbar">
+          <div className="brand-line">
+            <span className="dot" /> IUPAT District Council 78
+          </div>
+          <div className="secure-badge">Application form</div>
         </div>
 
-        <section className="glaz-card">
-          {success ? (
-            <div className="glaz-success">
-              <div className="glaz-success-icon">✓</div>
-              <h2>Application received</h2>
-              <p>
-                Thank you for applying. Our team will review your information and
-                contact you about next steps. Please answer if we call — the
-                interview is when compensation and benefits are explained in
-                detail.
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={(e) => void onSubmit(e)} noValidate>
-              <div className="glaz-eyebrow">Now hiring</div>
+        <section className="shell">
+          <aside className="hero">
+            <div>
+              <div
+                className="logo-stage"
+                aria-label="Animated DC 78 brand mark"
+              >
+                <div className="logo-flip">
+                  <div className="logo-face logo-front">
+                    <img
+                      src={logoSrc}
+                      alt="IUPAT District Council 78 brand"
+                      onError={onLogoError}
+                    />
+                  </div>
+                  <div className="logo-face logo-back">
+                    <div>
+                      <div className="dc78-mark">DC 78</div>
+                      <div className="dc78-sub">
+                        Painters &amp; Allied Trades
+                        <br />
+                        District Council 78
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="eyebrow">Glazing Opportunities</div>
               <h1>Apply to Work for Glazing!</h1>
-              <div className="glaz-pay">$45.09/hour including benefits</div>
-              <p className="glaz-lead">
-                Compensation and benefit details will be explained during the
-                interview. Do not miss the call.
-              </p>
-              <p className="glaz-note">
-                An interview is required to review your qualifications for this
-                glazing opportunity.
+              <p className="hero-copy">
+                Complete the application so our team can contact you about the
+                opportunity and the next steps.
               </p>
 
-              <div className="glaz-grid-2">
-                <div className="glaz-field">
-                  <label htmlFor="firstName">
-                    First Name <span className="glaz-req">*</span>
-                  </label>
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    autoComplete="given-name"
-                    required
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                  />
-                </div>
-                <div className="glaz-field">
-                  <label htmlFor="lastName">
-                    Last Name <span className="glaz-req">*</span>
-                  </label>
-                  <input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    autoComplete="family-name"
-                    required
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                  />
-                </div>
+              <div className="pay-card" aria-label="Compensation information">
+                <div className="pay-label">Pay + benefits</div>
+                <div className="pay-amount">💲 $45.09/hour</div>
+                <p className="pay-copy">
+                  Including benefits. Details will be explained during the
+                  interview. <strong>Do not miss the call.</strong>
+                </p>
+                <p className="pay-small">
+                  An interview is required to review your qualifications to work
+                  for Glazing.
+                </p>
               </div>
+            </div>
 
-              <div className="glaz-grid-2">
-                <div className="glaz-field">
-                  <label htmlFor="email">
-                    Email <span className="glaz-req">*</span>
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    inputMode="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div className="glaz-field">
-                  <label htmlFor="phone">
-                    Phone Number <span className="glaz-req">*</span>
-                  </label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    autoComplete="tel"
-                    inputMode="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
-                </div>
-              </div>
+            <div className="hero-note">
+              Please enter a phone number and call-availability window where you
+              can reliably be reached.
+            </div>
+          </aside>
 
-              <div className="glaz-field">
-                <label htmlFor="trade">Trade</label>
-                <input
-                  id="trade"
-                  name="trade"
-                  type="text"
-                  value="Glazing"
-                  readOnly
-                  aria-readonly="true"
-                />
-              </div>
+          <section className="form-card">
+            <form onSubmit={(e) => void onSubmit(e)} noValidate>
+              {!success ? (
+                <div id="formContent">
+                  <div className="form-title">
+                    <div>
+                      <h2>Tell us about you</h2>
+                      <p>Fill out the form below, and we will contact you.</p>
+                    </div>
+                    <div className="required-note">
+                      <span className="req">*</span> Required
+                    </div>
+                  </div>
 
-              <div className="glaz-field">
-                <span className="glaz-label">
-                  Do you have experience in the trade?{" "}
-                  <span className="glaz-req">*</span>
-                </span>
-                <div className="glaz-radio-group" role="radiogroup">
-                  <label className="glaz-radio">
-                    <input
-                      type="radio"
-                      name="hasTradeExperience"
-                      value="Yes"
-                      checked={hasTradeExperience === "Yes"}
-                      onChange={() => onExperienceChange("Yes")}
-                    />
-                    Yes
-                  </label>
-                  <label className="glaz-radio">
-                    <input
-                      type="radio"
-                      name="hasTradeExperience"
-                      value="No"
-                      checked={hasTradeExperience === "No"}
-                      onChange={() => onExperienceChange("No")}
-                    />
-                    No
-                  </label>
-                </div>
-              </div>
+                  <div className="grid-2">
+                    <div className="field">
+                      <label htmlFor="firstName">
+                        Name <span className="req">*</span>
+                      </label>
+                      <input
+                        id="firstName"
+                        name="firstName"
+                        type="text"
+                        autoComplete="given-name"
+                        required
+                        placeholder="First name"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                      />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="lastName">
+                        Last name <span className="req">*</span>
+                      </label>
+                      <input
+                        id="lastName"
+                        name="lastName"
+                        type="text"
+                        autoComplete="family-name"
+                        required
+                        placeholder="Last name"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                      />
+                    </div>
+                  </div>
 
-              {hasTradeExperience === "Yes" ? (
-                <div className="glaz-field">
-                  <label htmlFor="experienceLength">
-                    How much experience do you have?{" "}
-                    <span className="glaz-req">*</span>
-                  </label>
-                  <select
-                    id="experienceLength"
-                    name="experienceLength"
-                    required
-                    value={experienceLength}
-                    onChange={(e) => setExperienceLength(e.target.value)}
+                  <div className="grid-2">
+                    <div className="field">
+                      <label htmlFor="email">
+                        Email <span className="req">*</span>
+                      </label>
+                      <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        autoComplete="email"
+                        inputMode="email"
+                        required
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="phone">
+                        Phone number <span className="req">*</span>
+                      </label>
+                      <input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        autoComplete="tel"
+                        inputMode="tel"
+                        required
+                        placeholder="(555) 555-5555"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="field">
+                    <span className="field-label">
+                      Do you have experience on the trade?{" "}
+                      <span className="req">*</span>
+                    </span>
+                    <div
+                      className="radio-row"
+                      role="radiogroup"
+                      aria-label="Trade experience"
+                    >
+                      <label className="radio-option">
+                        <input
+                          type="radio"
+                          name="hasTradeExperience"
+                          value="Yes"
+                          checked={hasTradeExperience === "Yes"}
+                          onChange={() => onExperienceChange("Yes")}
+                          required
+                        />
+                        <span>Yes</span>
+                      </label>
+                      <label className="radio-option">
+                        <input
+                          type="radio"
+                          name="hasTradeExperience"
+                          value="No"
+                          checked={hasTradeExperience === "No"}
+                          onChange={() => onExperienceChange("No")}
+                          required
+                        />
+                        <span>No</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`field conditional${
+                      hasTradeExperience === "Yes" ? " show" : ""
+                    }`}
                   >
-                    <option value="">Select experience</option>
-                    {EXPERIENCE_LENGTH_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
+                    <label htmlFor="experienceLength">
+                      How much experience do you have?{" "}
+                      <span className="req">*</span>
+                    </label>
+                    <select
+                      id="experienceLength"
+                      name="experienceLength"
+                      required={hasTradeExperience === "Yes"}
+                      value={experienceLength}
+                      onChange={(e) => setExperienceLength(e.target.value)}
+                    >
+                      <option value="">Choose one</option>
+                      {EXPERIENCE_LENGTH_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {EXPERIENCE_LENGTH_LABELS[opt] ?? opt}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="callAvailability">
+                      Availability for a call <span className="req">*</span>
+                    </label>
+                    <select
+                      id="callAvailability"
+                      name="callAvailability"
+                      required
+                      value={callAvailability}
+                      onChange={(e) => setCallAvailability(e.target.value)}
+                    >
+                      <option value="">Choose the best time</option>
+                      {CALL_AVAILABILITY_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {CALL_AVAILABILITY_LABELS[opt] ?? opt}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="trade">Trade</label>
+                    <input
+                      id="trade"
+                      name="trade"
+                      type="text"
+                      value="Glazing"
+                      readOnly
+                      aria-readonly="true"
+                    />
+                  </div>
+
+                  <input type="hidden" name="source" value="paid ad" />
+                  <input type="hidden" name="sheetTab" value="Glaziers" />
+
+                  <button
+                    className="submit-btn"
+                    type="submit"
+                    disabled={busy}
+                  >
+                    {busy ? "SUBMITTING..." : "APPLY NOW"}
+                  </button>
+
+                  {error ? (
+                    <div className="status show error" role="status" aria-live="polite">
+                      {error}
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-
-              <div className="glaz-field">
-                <label htmlFor="callAvailability">
-                  Availability for a call <span className="glaz-req">*</span>
-                </label>
-                <select
-                  id="callAvailability"
-                  name="callAvailability"
-                  required
-                  value={callAvailability}
-                  onChange={(e) => setCallAvailability(e.target.value)}
-                >
-                  <option value="">Select availability</option>
-                  {CALL_AVAILABILITY_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button className="glaz-submit" type="submit" disabled={busy}>
-                {busy ? "Submitting…" : "Submit application"}
-              </button>
-
-              {error ? (
-                <div className="glaz-error" role="alert">
-                  {error}
+              ) : (
+                <div className="success-screen show">
+                  <div>
+                    <div className="success-icon">✓</div>
+                    <h3>Application received.</h3>
+                    <p>
+                      <strong>
+                        Thank you. Our team will contact you using the
+                        information you provided.
+                      </strong>
+                    </p>
+                    <span className="small">
+                      Please watch for our call during your selected
+                      availability window.
+                    </span>
+                  </div>
                 </div>
-              ) : null}
+              )}
             </form>
-          )}
+          </section>
         </section>
 
-        <div className="glaz-footer">
-          District Council 78 · Glazing job application
-        </div>
-      </div>
-    </main>
+        <div className="footer">District Council 78 • Glazing Application</div>
+      </main>
+    </div>
   );
 }

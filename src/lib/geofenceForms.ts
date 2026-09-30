@@ -37,8 +37,9 @@ export const GLAZIERS_HEADERS = [
   "Status",
 ] as const;
 
+/** Submitted option values match dc78-glazing-application-vercel.html */
 export const EXPERIENCE_LENGTH_OPTIONS = [
-  "0–3 months",
+  "0-3 months",
   "6 months",
   "1 year",
   "3 years",
@@ -47,10 +48,11 @@ export const EXPERIENCE_LENGTH_OPTIONS = [
 ] as const;
 
 export const CALL_AVAILABILITY_OPTIONS = [
-  "Morning (8am–12pm)",
-  "Afternoon (12pm–5pm)",
-  "Evening (5pm–8pm)",
-  "Anytime",
+  "Morning (8:00 AM - 11:00 AM)",
+  "Midday (11:00 AM - 2:00 PM)",
+  "Afternoon (2:00 PM - 5:00 PM)",
+  "Evening (5:00 PM - 7:00 PM)",
+  "Flexible / Any time",
 ] as const;
 
 export const geofenceApplicationSchema = z
