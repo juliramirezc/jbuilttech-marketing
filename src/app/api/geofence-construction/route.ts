@@ -3,16 +3,30 @@ import { assertGoogleDriveConfigured, getMissingGoogleEnvNames } from "@/lib/goo
 import {
   geofenceApplicationSchema,
   resolveGeofenceFormConfig,
+  resolveLeadSource,
 } from "@/lib/geofenceForms";
 import {
   appendGeofenceApplicationRow,
   ensureGeofenceConstructionSheet,
-  geofenceSubmissionAlreadyRecorded,
 } from "@/lib/geofenceSheets";
 import { clientIp, rateLimit } from "@/lib/memberStories";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+/** Short-lived in-memory dedupe (submissionId is not stored in the sheet). */
+const recentSubmissionIds = new Map<string, number>();
+const DEDUPE_TTL_MS = 10 * 60 * 1000;
+
+function isRecentDuplicate(submissionId: string): boolean {
+  const now = Date.now();
+  for (const [id, at] of recentSubmissionIds) {
+    if (now - at > DEDUPE_TTL_MS) recentSubmissionIds.delete(id);
+  }
+  if (recentSubmissionIds.has(submissionId)) return true;
+  recentSubmissionIds.set(submissionId, now);
+  return false;
+}
 
 function isConfigError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
@@ -59,59 +73,42 @@ export async function POST(request: Request) {
     );
   }
 
-  // Server-side force — never trust client trade/sheetTab/source/formType
-  const trade = config.trade;
+  // Server-side force — never trust client destination fields
   const sheetTab = config.sheetTab;
-  const source = config.source;
-  const formType = config.formType;
+  const leadSource = resolveLeadSource(data.utmMedium);
 
   const firstName = data.firstName.trim();
   const lastName = data.lastName.trim();
-  const fullName =
-    data.fullName?.trim() ||
-    [firstName, lastName].filter(Boolean).join(" ");
   const email = data.email.trim().toLowerCase();
   const phone = data.phone.trim();
   const hasTradeExperience = data.hasTradeExperience;
   const experienceLength =
     hasTradeExperience === "Yes" ? data.experienceLength.trim() : "";
   const callAvailability = data.callAvailability.trim();
-  const submittedAt = new Date().toISOString();
+
+  if (isRecentDuplicate(data.submissionId)) {
+    return NextResponse.json({
+      success: true,
+      submissionId: data.submissionId,
+      duplicate: true,
+    });
+  }
 
   try {
     assertGoogleDriveConfigured();
     const { spreadsheetId } = await ensureGeofenceConstructionSheet(config);
 
-    if (
-      await geofenceSubmissionAlreadyRecorded(
-        spreadsheetId,
-        sheetTab,
-        data.submissionId
-      )
-    ) {
-      return NextResponse.json({
-        success: true,
-        submissionId: data.submissionId,
-        duplicate: true,
-      });
-    }
-
     await appendGeofenceApplicationRow({
       spreadsheetId,
       sheetTab,
-      submittedAt,
-      submissionId: data.submissionId,
       firstName,
       lastName,
-      fullName,
       email,
       phone,
       hasTradeExperience,
       experienceLength,
       callAvailability,
-      trade,
-      source,
-      formType,
+      leadSource,
     });
 
     return NextResponse.json({
@@ -119,6 +116,8 @@ export async function POST(request: Request) {
       submissionId: data.submissionId,
     });
   } catch (err) {
+    // Allow a retry if Sheets append failed
+    recentSubmissionIds.delete(data.submissionId);
     console.error("[geofence-construction]", err);
     const configMissing = isConfigError(err);
     return NextResponse.json(

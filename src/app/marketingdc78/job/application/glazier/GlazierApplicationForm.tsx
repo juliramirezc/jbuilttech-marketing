@@ -89,6 +89,10 @@ export function GlazierApplicationForm() {
     setBusy(true);
     const submissionId = createSubmissionId();
     const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+    const utmMedium =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("utm_medium") || ""
+        : "";
 
     try {
       const res = await fetch("/api/geofence-construction", {
@@ -106,10 +110,7 @@ export function GlazierApplicationForm() {
           experienceLength:
             hasTradeExperience === "Yes" ? experienceLength : "",
           callAvailability,
-          trade: "Glazing",
-          sheetTab: "Glaziers",
-          source: "paid ad",
-          formType: "geofence-construction",
+          utmMedium,
         }),
       });
 

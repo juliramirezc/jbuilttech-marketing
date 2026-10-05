@@ -8,6 +8,7 @@ import {
 import {
   GLAZIERS_HEADERS,
   type GeofenceFormConfig,
+  type LeadSource,
 } from "@/lib/geofenceForms";
 
 function escapeSheetTitle(title: string): string {
@@ -106,12 +107,9 @@ async function ensureTabWithHeaders(
       spreadsheetId,
       range: `'${escapeSheetTitle(tabTitle)}'!A1`,
       valueInputOption: "RAW",
-      requestBody: { values: [ [...headers] ] },
+      requestBody: { values: [[...headers]] },
     });
   }
-
-  // If spreadsheet was brand new with default "Sheet1" and we added a trade tab,
-  // leave Sheet1 alone — future trades will add their own tabs.
 }
 
 function columnLetter(n: number): string {
@@ -126,7 +124,7 @@ function columnLetter(n: number): string {
 }
 
 /**
- * Resolve Geofences folder → Geofence Construction spreadsheet → trade tab.
+ * Resolve Applications Construction folder → spreadsheet → Glaziers tab.
  */
 export async function ensureGeofenceConstructionSheet(
   config: GeofenceFormConfig
@@ -142,9 +140,7 @@ export async function ensureGeofenceConstructionSheet(
     };
   }
 
-  const folderId = await findOrCreateSharedDriveFolder(
-    config.geofencesFolderName
-  );
+  const folderId = await findOrCreateSharedDriveFolder(config.driveFolderName);
   let spreadsheetId = await findSpreadsheetInFolder(
     folderId,
     config.spreadsheetName
@@ -164,65 +160,54 @@ export async function ensureGeofenceConstructionSheet(
   };
 }
 
-export async function geofenceSubmissionAlreadyRecorded(
-  spreadsheetId: string,
-  sheetTab: string,
-  submissionId: string
-): Promise<boolean> {
-  const sheets = getSheetsClient();
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: `'${escapeSheetTitle(sheetTab)}'!B:B`,
-  });
-  const rows = res.data.values ?? [];
-  return rows.some((row, idx) => idx > 0 && row[0] === submissionId);
-}
-
-export async function appendGeofenceApplicationRow(options: {
-  spreadsheetId: string;
-  sheetTab: string;
-  submittedAt: string;
-  submissionId: string;
+/** Build the exact 8-cell row written to the Glaziers tab. */
+export function buildGlaziersSheetRow(options: {
   firstName: string;
   lastName: string;
-  fullName: string;
   email: string;
   phone: string;
   hasTradeExperience: string;
   experienceLength: string;
   callAvailability: string;
-  trade: string;
-  source: string;
-  formType: string;
+  leadSource: LeadSource;
+}): string[] {
+  const experienceTime =
+    options.hasTradeExperience === "Yes" ? options.experienceLength || "" : "";
+
+  return [
+    options.firstName,
+    options.lastName,
+    options.email,
+    options.phone,
+    options.hasTradeExperience,
+    experienceTime,
+    options.callAvailability,
+    options.leadSource,
+  ];
+}
+
+export async function appendGeofenceApplicationRow(options: {
+  spreadsheetId: string;
+  sheetTab: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  hasTradeExperience: string;
+  experienceLength: string;
+  callAvailability: string;
+  leadSource: LeadSource;
 }): Promise<void> {
   const sheets = getSheetsClient();
-  const experienceLength =
-    options.hasTradeExperience === "Yes" ? options.experienceLength || "" : "";
+  const row = buildGlaziersSheetRow(options);
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: options.spreadsheetId,
-    range: `'${escapeSheetTitle(options.sheetTab)}'!A:N`,
+    range: `'${escapeSheetTitle(options.sheetTab)}'!A:H`,
     valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
     requestBody: {
-      values: [
-        [
-          options.submittedAt,
-          options.submissionId,
-          options.firstName,
-          options.lastName,
-          options.fullName,
-          options.email,
-          options.phone,
-          options.hasTradeExperience,
-          experienceLength,
-          options.callAvailability,
-          options.trade,
-          options.source,
-          options.formType,
-          "New",
-        ],
-      ],
+      values: [row],
     },
   });
 }

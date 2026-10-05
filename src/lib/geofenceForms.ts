@@ -1,18 +1,17 @@
 import { z } from "zod";
 
 /**
- * Server-side allowlist for geofence construction job applications.
- * Browser-supplied trade/sheetTab/source/formType are ignored — these win.
+ * Server-side allowlist for construction job applications.
+ * Browser-supplied trade/sheetTab/destination fields are ignored — these win.
  */
 export const GEOFENCE_FORM_CONFIG = {
   "glazier-paid-ad": {
     formKey: "glazier-paid-ad",
-    spreadsheetName: "Geofence Construction",
+    spreadsheetName: "Applications Construction",
     sheetTab: "Glaziers",
     trade: "Glazing",
-    source: "paid ad",
     formType: "geofence-construction",
-    geofencesFolderName: "Geofences",
+    driveFolderName: "Applications Construction",
   },
 } as const;
 
@@ -20,21 +19,16 @@ export type GeofenceFormKey = keyof typeof GEOFENCE_FORM_CONFIG;
 export type GeofenceFormConfig =
   (typeof GEOFENCE_FORM_CONFIG)[GeofenceFormKey];
 
+/** Exact Glaziers tab headers — do not add extra columns. */
 export const GLAZIERS_HEADERS = [
-  "Submitted At",
-  "Submission ID",
-  "First Name",
-  "Last Name",
-  "Full Name",
+  "Name",
+  "Last name",
   "Email",
   "Phone Number",
-  "Has Trade Experience",
-  "Experience Length",
-  "Call Availability",
-  "Trade",
-  "Source",
-  "Form Type",
-  "Status",
+  "Experience on Trade (Yes/No)",
+  "Experience time",
+  "Availability for call",
+  "Paid/ Organic",
 ] as const;
 
 /** Submitted option values match dc78-glazing-application-vercel.html */
@@ -55,6 +49,14 @@ export const CALL_AVAILABILITY_OPTIONS = [
   "Flexible / Any time",
 ] as const;
 
+export type LeadSource = "Paid" | "Organic";
+
+/** Normalize utm_medium → Paid | Organic (server-side only). */
+export function resolveLeadSource(utmMedium?: string | null): LeadSource {
+  const normalizedMedium = utmMedium?.trim().toLowerCase();
+  return normalizedMedium === "paid" ? "Paid" : "Organic";
+}
+
 export const geofenceApplicationSchema = z
   .object({
     formKey: z
@@ -72,6 +74,8 @@ export const geofenceApplicationSchema = z
     hasTradeExperience: z.enum(["Yes", "No"]),
     experienceLength: z.string().max(80).optional().default(""),
     callAvailability: z.string().min(1).max(120),
+    /** From URL `utm_medium`; server normalizes to Paid/Organic. */
+    utmMedium: z.string().max(80).optional(),
     // Client may send these; server overrides from FORM_CONFIG
     trade: z.string().max(80).optional(),
     sheetTab: z.string().max(80).optional(),
