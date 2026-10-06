@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { GoogleTagManager } from "@next/third-parties/google";
 import { CalendlyProvider } from "@/components/calendly";
 import { LeadProvider } from "@/components/lead";
@@ -53,6 +54,8 @@ export const viewport: Viewport = {
   themeColor: "#0B0B0B",
 };
 
+const GOOGLE_ADS_ID = "AW-18330253504";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -62,6 +65,20 @@ export default function RootLayout({
     <html lang="en">
       <GoogleTagManager gtmId="GTM-MGZPGP8C" />
       <body className="min-h-screen bg-[#0B0B0B] text-white antialiased">
+        {/* Google tag (gtag.js) — Google Ads */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-ads-gtag" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GOOGLE_ADS_ID}');
+          `}
+        </Script>
+
         {/* Subtle noise texture for premium feel */}
         <div className="noise-overlay" aria-hidden="true" />
 
