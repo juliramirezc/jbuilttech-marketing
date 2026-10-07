@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import {
   CALL_AVAILABILITY_OPTIONS,
+  CITY_AREA_OPTIONS,
   EXPERIENCE_LENGTH_OPTIONS,
 } from "@/lib/geofenceForms";
 import "./glazier-application.css";
@@ -41,6 +42,8 @@ export function GlazierApplicationForm() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [cityArea, setCityArea] = useState("");
+  const [customCity, setCustomCity] = useState("");
   const [hasTradeExperience, setHasTradeExperience] = useState<
     "" | "Yes" | "No"
   >("");
@@ -49,6 +52,11 @@ export function GlazierApplicationForm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  function onCityAreaChange(value: string) {
+    setCityArea(value);
+    if (value !== "Other") setCustomCity("");
+  }
 
   function onExperienceChange(value: "Yes" | "No") {
     setHasTradeExperience(value);
@@ -71,6 +79,14 @@ export function GlazierApplicationForm() {
     }
     if (!email.trim() || !phone.trim()) {
       setError("Please enter your email and phone number.");
+      return;
+    }
+    if (!cityArea) {
+      setError("Please select which area you are located in.");
+      return;
+    }
+    if (cityArea === "Other" && !customCity.trim()) {
+      setError("Please enter your city.");
       return;
     }
     if (!hasTradeExperience) {
@@ -106,6 +122,8 @@ export function GlazierApplicationForm() {
           fullName,
           email: email.trim(),
           phone: phone.trim(),
+          cityArea,
+          customCity: cityArea === "Other" ? customCity.trim() : "",
           hasTradeExperience,
           experienceLength:
             hasTradeExperience === "Yes" ? experienceLength : "",
@@ -277,6 +295,47 @@ export function GlazierApplicationForm() {
                         onChange={(e) => setPhone(e.target.value)}
                       />
                     </div>
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="cityArea">
+                      Which area are you located in?{" "}
+                      <span className="req">*</span>
+                    </label>
+                    <select
+                      id="cityArea"
+                      name="cityArea"
+                      required
+                      value={cityArea}
+                      onChange={(e) => onCityAreaChange(e.target.value)}
+                    >
+                      <option value="">Select your area</option>
+                      {CITY_AREA_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div
+                    className={`field conditional${
+                      cityArea === "Other" ? " show" : ""
+                    }`}
+                  >
+                    <label htmlFor="customCity">
+                      Please enter your city <span className="req">*</span>
+                    </label>
+                    <input
+                      id="customCity"
+                      name="customCity"
+                      type="text"
+                      autoComplete="address-level2"
+                      required={cityArea === "Other"}
+                      placeholder="Your city"
+                      value={customCity}
+                      onChange={(e) => setCustomCity(e.target.value)}
+                    />
                   </div>
 
                   <div className="field">

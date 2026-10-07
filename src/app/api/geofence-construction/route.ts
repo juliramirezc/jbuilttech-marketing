@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { assertGoogleDriveConfigured, getMissingGoogleEnvNames } from "@/lib/googleDrive";
 import {
   geofenceApplicationSchema,
+  resolveCityArea,
   resolveGeofenceFormConfig,
   resolveLeadSource,
 } from "@/lib/geofenceForms";
@@ -76,6 +77,13 @@ export async function POST(request: Request) {
   // Server-side force — never trust client destination fields
   const sheetTab = config.sheetTab;
   const leadSource = resolveLeadSource(data.utmMedium);
+  const cityArea = resolveCityArea(data.cityArea, data.customCity);
+  if (!cityArea) {
+    return NextResponse.json(
+      { error: "Please select your area or enter your city" },
+      { status: 400 }
+    );
+  }
 
   const firstName = data.firstName.trim();
   const lastName = data.lastName.trim();
@@ -105,6 +113,7 @@ export async function POST(request: Request) {
       lastName,
       email,
       phone,
+      cityArea,
       hasTradeExperience,
       experienceLength,
       callAvailability,

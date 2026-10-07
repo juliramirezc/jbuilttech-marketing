@@ -25,11 +25,25 @@ export const GLAZIERS_HEADERS = [
   "Last name",
   "Email",
   "Phone Number",
+  "City / Area",
   "Experience on Trade (Yes/No)",
   "Experience time",
   "Availability for call",
   "Paid/ Organic",
 ] as const;
+
+export const CITY_AREA_OPTIONS = [
+  "Fort Myers",
+  "Naples",
+  "Tampa",
+  "Sarasota",
+  "Orlando",
+  "Panama City",
+  "Tallahassee",
+  "Other",
+] as const;
+
+export type CityAreaOption = (typeof CITY_AREA_OPTIONS)[number];
 
 /** Submitted option values match dc78-glazing-application-vercel.html */
 export const EXPERIENCE_LENGTH_OPTIONS = [
@@ -57,6 +71,28 @@ export function resolveLeadSource(utmMedium?: string | null): LeadSource {
   return normalizedMedium === "paid" ? "Paid" : "Organic";
 }
 
+/**
+ * Resolve the city written to the sheet.
+ * Predefined selections are written as-is; Other uses the trimmed custom city.
+ */
+export function resolveCityArea(
+  cityArea: string,
+  customCity?: string | null
+): string | null {
+  const selected = cityArea.trim();
+  if (
+    !CITY_AREA_OPTIONS.includes(selected as CityAreaOption) ||
+    selected === ""
+  ) {
+    return null;
+  }
+  if (selected === "Other") {
+    const custom = (customCity || "").trim();
+    return custom.length > 0 ? custom : null;
+  }
+  return selected;
+}
+
 export const geofenceApplicationSchema = z
   .object({
     formKey: z
@@ -71,6 +107,8 @@ export const geofenceApplicationSchema = z
     fullName: z.string().max(240).optional(),
     email: z.string().email().max(254),
     phone: z.string().min(7).max(40),
+    cityArea: z.string().min(1).max(120),
+    customCity: z.string().max(120).optional().default(""),
     hasTradeExperience: z.enum(["Yes", "No"]),
     experienceLength: z.string().max(80).optional().default(""),
     callAvailability: z.string().min(1).max(120),
@@ -83,6 +121,24 @@ export const geofenceApplicationSchema = z
     formType: z.string().max(80).optional(),
   })
   .superRefine((data, ctx) => {
+    if (
+      !CITY_AREA_OPTIONS.includes(data.cityArea as CityAreaOption)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please select a valid area",
+        path: ["cityArea"],
+      });
+    } else if (data.cityArea === "Other") {
+      if (!(data.customCity || "").trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter your city",
+          path: ["customCity"],
+        });
+      }
+    }
+
     if (data.hasTradeExperience === "Yes") {
       if (
         !EXPERIENCE_LENGTH_OPTIONS.includes(

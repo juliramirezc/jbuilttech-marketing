@@ -160,12 +160,13 @@ export async function ensureGeofenceConstructionSheet(
   };
 }
 
-/** Build the exact 8-cell row written to the Glaziers tab. */
+/** Build the exact 9-cell row written to the Glaziers tab. */
 export function buildGlaziersSheetRow(options: {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
+  cityArea: string;
   hasTradeExperience: string;
   experienceLength: string;
   callAvailability: string;
@@ -179,6 +180,7 @@ export function buildGlaziersSheetRow(options: {
     options.lastName,
     options.email,
     options.phone,
+    options.cityArea,
     options.hasTradeExperience,
     experienceTime,
     options.callAvailability,
@@ -193,6 +195,7 @@ export async function appendGeofenceApplicationRow(options: {
   lastName: string;
   email: string;
   phone: string;
+  cityArea: string;
   hasTradeExperience: string;
   experienceLength: string;
   callAvailability: string;
@@ -203,7 +206,7 @@ export async function appendGeofenceApplicationRow(options: {
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: options.spreadsheetId,
-    range: `'${escapeSheetTitle(options.sheetTab)}'!A:H`,
+    range: `'${escapeSheetTitle(options.sheetTab)}'!A:I`,
     valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
     requestBody: {
