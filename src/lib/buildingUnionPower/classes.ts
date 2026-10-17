@@ -1,7 +1,6 @@
 /**
  * Building Union Power 2 class configurations.
  * Each county gets its own registration URL and dedicated spreadsheet.
- * Leon is defined for future reuse — do not publish a Leon route yet.
  */
 
 export type BuildingUnionPowerClassConfig = {
@@ -46,7 +45,6 @@ export const MARION_CLASS: BuildingUnionPowerClassConfig = {
   spreadsheetIdEnv: "GOOGLE_MARION_BUP_SPREADSHEET_ID",
 };
 
-/** Future Leon County class — config only; no page/API yet. */
 export const LEON_CLASS: BuildingUnionPowerClassConfig = {
   countyKey: "leon",
   formKey: "building-union-power-leon",
@@ -57,10 +55,11 @@ export const LEON_CLASS: BuildingUnionPowerClassConfig = {
   timeLabel: "9:00 AM ET",
   startTimeEt: "09:00",
   endTimeEt: "11:00",
-  locationName: "Leon County Class Location",
+  // Venue name / ZIP not provided — leave blank; do not invent.
+  locationName: "",
   addressLine1: "2757 West Pensacola Street",
   addressLine2: "Tallahassee, Florida",
-  spreadsheetName: "Leon County Union Building Power class",
+  spreadsheetName: "Leon County Union Building Power clas",
   sheetTab: "Leon Registrations",
   driveFolderName: "Applications Public Sector",
   spreadsheetIdEnv: "GOOGLE_LEON_BUP_SPREADSHEET_ID",
@@ -89,7 +88,12 @@ export function buildGoogleCalendarUrl(
 ): string {
   const start = `${config.dateIso.replace(/-/g, "")}T${config.startTimeEt.replace(":", "")}00`;
   const end = `${config.dateIso.replace(/-/g, "")}T${config.endTimeEt.replace(":", "")}00`;
-  const location = `${config.locationName}, ${config.addressLine1}, ${config.addressLine2}`;
+  const locationParts = [
+    config.locationName,
+    config.addressLine1,
+    config.addressLine2,
+  ].filter((part) => part.trim());
+  const location = locationParts.join(", ");
   const params = new URLSearchParams({
     action: "TEMPLATE",
     text: `${config.title} — ${config.subtitle.replace(" — Class Registration", "")}`,

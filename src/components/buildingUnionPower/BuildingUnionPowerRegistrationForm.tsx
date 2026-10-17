@@ -165,10 +165,12 @@ export function BuildingUnionPowerRegistrationForm({
               <dt>Time</dt>
               <dd>{classConfig.timeLabel}</dd>
             </div>
-            <div className="bup-meta-row">
-              <dt>Location</dt>
-              <dd>{classConfig.locationName}</dd>
-            </div>
+            {classConfig.locationName.trim() ? (
+              <div className="bup-meta-row">
+                <dt>Location</dt>
+                <dd>{classConfig.locationName}</dd>
+              </div>
+            ) : null}
             <div className="bup-meta-row">
               <dt>Address</dt>
               <dd>
@@ -195,8 +197,12 @@ export function BuildingUnionPowerRegistrationForm({
                 <br />
                 {classConfig.timeLabel}
                 <br />
-                {classConfig.locationName}
-                <br />
+                {classConfig.locationName.trim() ? (
+                  <>
+                    {classConfig.locationName}
+                    <br />
+                  </>
+                ) : null}
                 {classConfig.addressLine1}
                 <br />
                 {classConfig.addressLine2}
