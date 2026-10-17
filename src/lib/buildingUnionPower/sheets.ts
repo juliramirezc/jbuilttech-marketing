@@ -7,6 +7,8 @@ import {
 } from "@/lib/googleDrive";
 import {
   BUILDING_UNION_POWER_REGISTRATION_HEADERS,
+  BUP_PARENT_FOLDER_NAME,
+  LEON_CLASS,
   MARION_CLASS,
   type BuildingUnionPowerClassConfig,
 } from "@/lib/buildingUnionPower/classes";
@@ -34,17 +36,44 @@ function columnLetter(n: number): string {
 async function findSpreadsheetInFolder(
   folderId: string,
   name: string
-): Promise<string | null> {
+): Promise<{ id: string; name: string; parents: string[] } | null> {
   const drive = getDriveClient();
   const escaped = name.replace(/'/g, "\\'");
   const res = await drive.files.list({
     q: `'${folderId}' in parents and name = '${escaped}' and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false`,
-    fields: "files(id, name)",
+    fields: "files(id, name, parents)",
     pageSize: 5,
     supportsAllDrives: true,
     includeItemsFromAllDrives: true,
   });
-  return res.data.files?.[0]?.id ?? null;
+  const file = res.data.files?.[0];
+  if (!file?.id) return null;
+  return {
+    id: file.id,
+    name: file.name || name,
+    parents: file.parents || [],
+  };
+}
+
+async function findSpreadsheetByNameAnywhere(
+  name: string
+): Promise<{ id: string; name: string; parents: string[] } | null> {
+  const drive = getDriveClient();
+  const escaped = name.replace(/'/g, "\\'");
+  const res = await drive.files.list({
+    q: `name = '${escaped}' and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false`,
+    fields: "files(id, name, parents)",
+    pageSize: 5,
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
+  });
+  const file = res.data.files?.[0];
+  if (!file?.id) return null;
+  return {
+    id: file.id,
+    name: file.name || name,
+    parents: file.parents || [],
+  };
 }
 
 async function createSpreadsheetInFolder(
@@ -64,6 +93,39 @@ async function createSpreadsheetInFolder(
   const id = created.data.id;
   if (!id) throw new Error(`Failed to create spreadsheet: ${name}`);
   return id;
+}
+
+/**
+ * Rename and/or move an existing spreadsheet in place.
+ * Preserves file ID, contents, permissions, and worksheet data.
+ */
+async function renameAndMoveSpreadsheet(options: {
+  fileId: string;
+  targetName: string;
+  targetFolderId: string;
+  currentName: string;
+  currentParents: string[];
+}): Promise<void> {
+  const drive = getDriveClient();
+  const needsRename = options.currentName !== options.targetName;
+  const alreadyInFolder = options.currentParents.includes(
+    options.targetFolderId
+  );
+
+  if (!needsRename && alreadyInFolder) return;
+
+  const removeParents = options.currentParents
+    .filter((p) => p !== options.targetFolderId)
+    .join(",");
+
+  await drive.files.update({
+    fileId: options.fileId,
+    supportsAllDrives: true,
+    addParents: alreadyInFolder ? undefined : options.targetFolderId,
+    removeParents: removeParents || undefined,
+    requestBody: needsRename ? { name: options.targetName } : {},
+    fields: "id,name,parents",
+  });
 }
 
 async function listSheetTitles(
@@ -178,6 +240,46 @@ async function ensureTabWithHeaders(
   }
 }
 
+async function resolveExistingSpreadsheet(
+  config: BuildingUnionPowerClassConfig,
+  targetFolderId: string
+): Promise<{ id: string; name: string; parents: string[] } | null> {
+  // 1. Exact name in target folder
+  const inTarget = await findSpreadsheetInFolder(
+    targetFolderId,
+    config.spreadsheetName
+  );
+  if (inTarget) return inTarget;
+
+  // 2. Exact name anywhere on the shared drive
+  const byNewName = await findSpreadsheetByNameAnywhere(config.spreadsheetName);
+  if (byNewName) return byNewName;
+
+  // 3. Legacy names in legacy folders, then anywhere
+  const legacyNames = config.legacySpreadsheetNames || [];
+  const legacyFolders = config.legacyDriveFolderNames || [];
+
+  for (const legacyFolder of legacyFolders) {
+    const folderId = await findOrCreateSharedDriveFolder(legacyFolder);
+    for (const legacyName of legacyNames) {
+      const found = await findSpreadsheetInFolder(folderId, legacyName);
+      if (found) return found;
+    }
+  }
+
+  for (const legacyName of legacyNames) {
+    const found = await findSpreadsheetByNameAnywhere(legacyName);
+    if (found) return found;
+  }
+
+  return null;
+}
+
+/**
+ * Ensure the county spreadsheet exists under the configured parent folder
+ * with the configured display name. Renames/moves existing files in place
+ * (same spreadsheet ID) — never copies data into a new file.
+ */
 export async function ensureBuildingUnionPowerSheet(
   config: BuildingUnionPowerClassConfig = MARION_CLASS
 ): Promise<{ spreadsheetId: string; sheetUrl: string; folderName: string }> {
@@ -185,6 +287,22 @@ export async function ensureBuildingUnionPowerSheet(
 
   const pinned = process.env[config.spreadsheetIdEnv]?.trim();
   if (pinned) {
+    const targetFolderId = await findOrCreateSharedDriveFolder(
+      config.driveFolderName
+    );
+    const drive = getDriveClient();
+    const meta = await drive.files.get({
+      fileId: pinned,
+      supportsAllDrives: true,
+      fields: "id,name,parents",
+    });
+    await renameAndMoveSpreadsheet({
+      fileId: pinned,
+      targetName: config.spreadsheetName,
+      targetFolderId,
+      currentName: meta.data.name || "",
+      currentParents: meta.data.parents || [],
+    });
     await ensureTabWithHeaders(
       pinned,
       config.sheetTab,
@@ -193,16 +311,24 @@ export async function ensureBuildingUnionPowerSheet(
     return {
       spreadsheetId: pinned,
       sheetUrl: `https://docs.google.com/spreadsheets/d/${pinned}`,
-      folderName: `(pinned via ${config.spreadsheetIdEnv})`,
+      folderName: config.driveFolderName,
     };
   }
 
   const folderId = await findOrCreateSharedDriveFolder(config.driveFolderName);
-  let spreadsheetId = await findSpreadsheetInFolder(
-    folderId,
-    config.spreadsheetName
-  );
-  if (!spreadsheetId) {
+  const existing = await resolveExistingSpreadsheet(config, folderId);
+
+  let spreadsheetId: string;
+  if (existing) {
+    await renameAndMoveSpreadsheet({
+      fileId: existing.id,
+      targetName: config.spreadsheetName,
+      targetFolderId: folderId,
+      currentName: existing.name,
+      currentParents: existing.parents,
+    });
+    spreadsheetId = existing.id;
+  } else {
     spreadsheetId = await createSpreadsheetInFolder(
       folderId,
       config.spreadsheetName
@@ -219,6 +345,33 @@ export async function ensureBuildingUnionPowerSheet(
     spreadsheetId,
     sheetUrl: `https://docs.google.com/spreadsheets/d/${spreadsheetId}`,
     folderName: config.driveFolderName,
+  };
+}
+
+/** Organize both county sheets into the shared parent folder (idempotent). */
+export async function organizeBuildingUnionPowerDrive(): Promise<{
+  folderName: string;
+  folderUrl: string;
+  marion: { spreadsheetId: string; sheetUrl: string; spreadsheetName: string };
+  leon: { spreadsheetId: string; sheetUrl: string; spreadsheetName: string };
+}> {
+  const folderId = await findOrCreateSharedDriveFolder(BUP_PARENT_FOLDER_NAME);
+  const marion = await ensureBuildingUnionPowerSheet(MARION_CLASS);
+  const leon = await ensureBuildingUnionPowerSheet(LEON_CLASS);
+
+  return {
+    folderName: BUP_PARENT_FOLDER_NAME,
+    folderUrl: `https://drive.google.com/drive/folders/${folderId}`,
+    marion: {
+      spreadsheetId: marion.spreadsheetId,
+      sheetUrl: marion.sheetUrl,
+      spreadsheetName: MARION_CLASS.spreadsheetName,
+    },
+    leon: {
+      spreadsheetId: leon.spreadsheetId,
+      sheetUrl: leon.sheetUrl,
+      spreadsheetName: LEON_CLASS.spreadsheetName,
+    },
   };
 }
 

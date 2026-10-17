@@ -20,11 +20,17 @@ export type BuildingUnionPowerClassConfig = {
   addressLine1: string;
   addressLine2: string;
   spreadsheetName: string;
+  /** Prior spreadsheet titles to find before renaming (never create duplicates). */
+  legacySpreadsheetNames?: readonly string[];
   sheetTab: string;
   driveFolderName: string;
+  /** Prior parent folders where the sheet may currently live. */
+  legacyDriveFolderNames?: readonly string[];
   /** Optional env var that pins an existing spreadsheet ID */
   spreadsheetIdEnv: string;
 };
+
+export const BUP_PARENT_FOLDER_NAME = "Union Building Power Classes";
 
 export const MARION_CLASS: BuildingUnionPowerClassConfig = {
   countyKey: "marion",
@@ -39,9 +45,12 @@ export const MARION_CLASS: BuildingUnionPowerClassConfig = {
   locationName: "Marion Public Library",
   addressLine1: "2720 E Silver Springs Blvd",
   addressLine2: "Ocala, FL 34470",
-  spreadsheetName: "Marion County Union Building Power clas",
+  spreadsheetName:
+    "Marion County Union Building Power Class — October 24, 2026",
+  legacySpreadsheetNames: ["Marion County Union Building Power clas"],
   sheetTab: "Marion Registrations",
-  driveFolderName: "Applications Public Sector",
+  driveFolderName: BUP_PARENT_FOLDER_NAME,
+  legacyDriveFolderNames: ["Applications Public Sector"],
   spreadsheetIdEnv: "GOOGLE_MARION_BUP_SPREADSHEET_ID",
 };
 
@@ -59,9 +68,12 @@ export const LEON_CLASS: BuildingUnionPowerClassConfig = {
   locationName: "",
   addressLine1: "2757 West Pensacola Street",
   addressLine2: "Tallahassee, Florida",
-  spreadsheetName: "Leon County Union Building Power clas",
+  spreadsheetName:
+    "Leon County Union Building Power Class — November 7, 2026",
+  legacySpreadsheetNames: ["Leon County Union Building Power clas"],
   sheetTab: "Leon Registrations",
-  driveFolderName: "Applications Public Sector",
+  driveFolderName: BUP_PARENT_FOLDER_NAME,
+  legacyDriveFolderNames: ["Applications Public Sector"],
   spreadsheetIdEnv: "GOOGLE_LEON_BUP_SPREADSHEET_ID",
 };
 
