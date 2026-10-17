@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { assertGoogleDriveConfigured, getMissingGoogleEnvNames } from "@/lib/googleDrive";
 import {
-  geofenceApplicationSchema,
   resolveCityArea,
   resolveGeofenceFormConfig,
   resolveLeadSource,
+  resolveProjectLocation,
+  geofenceApplicationSchema,
 } from "@/lib/geofenceForms";
 import {
   appendGeofenceApplicationRow,
@@ -77,12 +78,29 @@ export async function POST(request: Request) {
   // Server-side force — never trust client destination fields
   const sheetTab = config.sheetTab;
   const leadSource = resolveLeadSource(data.utmMedium);
-  const cityArea = resolveCityArea(data.cityArea, data.customCity);
-  if (!cityArea) {
-    return NextResponse.json(
-      { error: "Please select your area or enter your city" },
-      { status: 400 }
-    );
+  const isPainter = config.formKey === "painter-industrial";
+
+  let cityArea = "";
+  let preferredProjectLocation = "";
+
+  if (isPainter) {
+    const location = resolveProjectLocation(data.preferredProjectLocation);
+    if (!location) {
+      return NextResponse.json(
+        { error: "Please select a preferred project location" },
+        { status: 400 }
+      );
+    }
+    preferredProjectLocation = location;
+  } else {
+    const resolvedCity = resolveCityArea(data.cityArea, data.customCity);
+    if (!resolvedCity) {
+      return NextResponse.json(
+        { error: "Please select your area or enter your city" },
+        { status: 400 }
+      );
+    }
+    cityArea = resolvedCity;
   }
 
   const firstName = data.firstName.trim();
@@ -109,11 +127,13 @@ export async function POST(request: Request) {
     await appendGeofenceApplicationRow({
       spreadsheetId,
       sheetTab,
+      headersKey: config.headersKey,
       firstName,
       lastName,
       email,
       phone,
       cityArea,
+      preferredProjectLocation,
       hasTradeExperience,
       experienceLength,
       callAvailability,

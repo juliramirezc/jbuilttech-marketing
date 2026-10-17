@@ -6,7 +6,7 @@ import {
   getSheetsClient,
 } from "@/lib/googleDrive";
 import {
-  GLAZIERS_HEADERS,
+  headersForForm,
   type GeofenceFormConfig,
   type LeadSource,
 } from "@/lib/geofenceForms";
@@ -124,16 +124,17 @@ function columnLetter(n: number): string {
 }
 
 /**
- * Resolve Applications Construction folder → spreadsheet → Glaziers tab.
+ * Resolve Applications Construction folder → spreadsheet → trade tab.
  */
 export async function ensureGeofenceConstructionSheet(
   config: GeofenceFormConfig
 ): Promise<{ spreadsheetId: string; sheetUrl: string }> {
   assertGoogleDriveConfigured();
+  const headers = headersForForm(config);
 
   const pinned = process.env.GOOGLE_GEOFENCE_SPREADSHEET_ID?.trim();
   if (pinned) {
-    await ensureTabWithHeaders(pinned, config.sheetTab, GLAZIERS_HEADERS);
+    await ensureTabWithHeaders(pinned, config.sheetTab, headers);
     return {
       spreadsheetId: pinned,
       sheetUrl: `https://docs.google.com/spreadsheets/d/${pinned}`,
@@ -152,7 +153,7 @@ export async function ensureGeofenceConstructionSheet(
     );
   }
 
-  await ensureTabWithHeaders(spreadsheetId, config.sheetTab, GLAZIERS_HEADERS);
+  await ensureTabWithHeaders(spreadsheetId, config.sheetTab, headers);
 
   return {
     spreadsheetId,
@@ -188,21 +189,74 @@ export function buildGlaziersSheetRow(options: {
   ];
 }
 
-export async function appendGeofenceApplicationRow(options: {
-  spreadsheetId: string;
-  sheetTab: string;
+/** Build the 9-cell row written to the Painting tab. */
+export function buildPaintingSheetRow(options: {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  cityArea: string;
+  hasTradeExperience: string;
+  experienceLength: string;
+  callAvailability: string;
+  leadSource: LeadSource;
+  preferredProjectLocation: string;
+}): string[] {
+  const experienceTime =
+    options.hasTradeExperience === "Yes" ? options.experienceLength || "" : "";
+
+  return [
+    options.firstName,
+    options.lastName,
+    options.email,
+    options.phone,
+    options.hasTradeExperience,
+    experienceTime,
+    options.callAvailability,
+    options.leadSource,
+    options.preferredProjectLocation,
+  ];
+}
+
+export async function appendGeofenceApplicationRow(options: {
+  spreadsheetId: string;
+  sheetTab: string;
+  headersKey: GeofenceFormConfig["headersKey"];
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  cityArea?: string;
+  preferredProjectLocation?: string;
   hasTradeExperience: string;
   experienceLength: string;
   callAvailability: string;
   leadSource: LeadSource;
 }): Promise<void> {
   const sheets = getSheetsClient();
-  const row = buildGlaziersSheetRow(options);
+  const row =
+    options.headersKey === "painting"
+      ? buildPaintingSheetRow({
+          firstName: options.firstName,
+          lastName: options.lastName,
+          email: options.email,
+          phone: options.phone,
+          hasTradeExperience: options.hasTradeExperience,
+          experienceLength: options.experienceLength,
+          callAvailability: options.callAvailability,
+          leadSource: options.leadSource,
+          preferredProjectLocation: options.preferredProjectLocation || "",
+        })
+      : buildGlaziersSheetRow({
+          firstName: options.firstName,
+          lastName: options.lastName,
+          email: options.email,
+          phone: options.phone,
+          cityArea: options.cityArea || "",
+          hasTradeExperience: options.hasTradeExperience,
+          experienceLength: options.experienceLength,
+          callAvailability: options.callAvailability,
+          leadSource: options.leadSource,
+        });
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: options.spreadsheetId,
