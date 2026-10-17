@@ -33,6 +33,8 @@ export type BuildingUnionPowerClassConfig = {
   sharedSpreadsheetIdEnv: string;
   /** Known production master ID (fallback when env unset) */
   knownMasterSpreadsheetId?: string;
+  /** Known production shared ID (fallback when env unset) */
+  knownSharedSpreadsheetId?: string;
 };
 
 export const BUP_MASTER_FOLDER_NAME =
@@ -72,6 +74,7 @@ export const MARION_CLASS: BuildingUnionPowerClassConfig = {
   masterSpreadsheetIdEnv: "GOOGLE_MARION_BUP_SPREADSHEET_ID",
   sharedSpreadsheetIdEnv: "GOOGLE_MARION_BUP_SHARED_SPREADSHEET_ID",
   knownMasterSpreadsheetId: "1LMxTk_oi2Sw2XkBNZ3-AyWjbextl74pa3sM3JzoRC68",
+  knownSharedSpreadsheetId: "1Kn3fGoHAHq5Fbko9dETEX0vnehXxM520eLlExEmNVc0",
 };
 
 export const LEON_CLASS: BuildingUnionPowerClassConfig = {
@@ -102,6 +105,7 @@ export const LEON_CLASS: BuildingUnionPowerClassConfig = {
   masterSpreadsheetIdEnv: "GOOGLE_LEON_BUP_SPREADSHEET_ID",
   sharedSpreadsheetIdEnv: "GOOGLE_LEON_BUP_SHARED_SPREADSHEET_ID",
   knownMasterSpreadsheetId: "1HvYv5SbPuwof0d0jKTwHzlF4JjPjjfg_JEUhippIlUU",
+  knownSharedSpreadsheetId: "1C_5ZoN7Ol5rtt35A6ooW4ZTdD8pFZ85PdQUbzfadJ-I",
 };
 
 /** Spreadsheet headers including internal registration ID (column A). */

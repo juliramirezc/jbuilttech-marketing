@@ -246,10 +246,10 @@ export async function ensureTabWithHeaders(
         ],
       },
     });
-    // Assign stable IDs to existing data rows
+    // After insert, former timestamp column is B — count rows there (A is empty).
     const dataRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `'${escapeSheetTitle(tabTitle)}'!A2:A`,
+      range: `'${escapeSheetTitle(tabTitle)}'!B2:B`,
     });
     const rowCount = dataRes.data.values?.length || 0;
     if (rowCount > 0) {
@@ -262,6 +262,53 @@ export async function ensureTabWithHeaders(
         valueInputOption: "RAW",
         requestBody: { values: ids },
       });
+    }
+  }
+
+  // Repair: header has Registration ID but some data rows still lack column A values
+  {
+    const probe = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `'${escapeSheetTitle(tabTitle)}'!A1:B`,
+    });
+    const headerCell = probe.data.values?.[0]?.[0]?.toString() || "";
+    if (headerCell === headers[0]) {
+      const body = (probe.data.values || []).slice(1);
+      const missingIdIndexes: number[] = [];
+      body.forEach((row, i) => {
+        const id = (row?.[0] || "").toString().trim();
+        const hasTimestamp = Boolean((row?.[1] || "").toString().trim());
+        // Sparse rows may omit empty A — detect via length/shift heuristics
+        if (!id && hasTimestamp) missingIdIndexes.push(i);
+        if (id && !id.startsWith("bup_") && !hasTimestamp) {
+          // Row likely shifted: values start at A with timestamp
+          missingIdIndexes.push(i);
+        }
+      });
+      // Broader repair: read B2:B timestamps and ensure A2:A IDs for each
+      const tsCol = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `'${escapeSheetTitle(tabTitle)}'!B2:B`,
+      });
+      const tsRows = tsCol.data.values || [];
+      const idCol = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `'${escapeSheetTitle(tabTitle)}'!A2:A`,
+      });
+      const idRows = idCol.data.values || [];
+      if (tsRows.length > 0) {
+        const repaired = tsRows.map((_, i) => {
+          const existing = (idRows[i]?.[0] || "").toString().trim();
+          if (existing.startsWith("bup_")) return [existing];
+          return [createRegistrationId()];
+        });
+        await sheets.spreadsheets.values.update({
+          spreadsheetId,
+          range: `'${escapeSheetTitle(tabTitle)}'!A2`,
+          valueInputOption: "RAW",
+          requestBody: { values: repaired },
+        });
+      }
     }
   }
 
@@ -316,7 +363,11 @@ function resolveMasterId(config: BuildingUnionPowerClassConfig): string | null {
 }
 
 function resolveSharedId(config: BuildingUnionPowerClassConfig): string | null {
-  return process.env[config.sharedSpreadsheetIdEnv]?.trim() || null;
+  return (
+    process.env[config.sharedSpreadsheetIdEnv]?.trim() ||
+    config.knownSharedSpreadsheetId ||
+    null
+  );
 }
 
 async function locateLegacyMaster(
