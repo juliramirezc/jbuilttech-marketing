@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/building-union-power/backup",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/building-union-power/reconcile",
+      "schedule": "30 6 * * *"
+    }
+  ]
+}

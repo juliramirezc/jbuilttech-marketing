@@ -8,10 +8,7 @@ import {
   formatNyTimestamp,
   marionRegistrationSchema,
 } from "@/lib/buildingUnionPower/schema";
-import {
-  appendMarionRegistrationRow,
-  ensureBuildingUnionPowerSheet,
-} from "@/lib/buildingUnionPower/sheets";
+import { saveRegistrationToMasterAndSync } from "@/lib/buildingUnionPower/sync";
 import { clientIp, rateLimit } from "@/lib/memberStories";
 
 export const runtime = "nodejs";
@@ -82,29 +79,33 @@ export async function POST(request: Request) {
   }
 
   const submittedAt = formatNyTimestamp();
+  const registrationId =
+    typeof (body as { registrationId?: unknown })?.registrationId === "string"
+      ? (body as { registrationId: string }).registrationId.trim()
+      : undefined;
 
   try {
     assertGoogleDriveConfigured();
-    const { spreadsheetId, folderName } =
-      await ensureBuildingUnionPowerSheet(LEON_CLASS);
-
-    await appendMarionRegistrationRow({
-      spreadsheetId,
-      sheetTab: LEON_CLASS.sheetTab,
+    const result = await saveRegistrationToMasterAndSync({
+      config: LEON_CLASS,
       data,
       submittedAt,
+      registrationId: registrationId || undefined,
     });
 
     console.info(
       "[building-union-power/leon] registration saved",
       JSON.stringify({
-        folderName,
-        spreadsheetConfigured: true,
-        spreadsheetName: LEON_CLASS.spreadsheetName,
+        sharedSynced: result.sharedSynced,
+        duplicate: Boolean(result.duplicate),
       })
     );
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      registrationId: result.registrationId,
+      sharedSynced: result.sharedSynced,
+    });
   } catch (err) {
     recentFingerprints.delete(fingerprint);
     console.error("[building-union-power/leon]", err);

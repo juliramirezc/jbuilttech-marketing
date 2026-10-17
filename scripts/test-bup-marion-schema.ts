@@ -7,7 +7,10 @@ import {
   formatNyTimestamp,
   marionRegistrationSchema,
 } from "../src/lib/buildingUnionPower/schema";
-import { buildMarionRegistrationRow } from "../src/lib/buildingUnionPower/sheets";
+import {
+  buildRegistrationRow,
+  createRegistrationId,
+} from "../src/lib/buildingUnionPower/sheets";
 import { MARION_REGISTRATION_HEADERS } from "../src/lib/buildingUnionPower/classes";
 
 function assert(cond: unknown, msg: string) {
@@ -154,15 +157,17 @@ ok("escapes formula injection");
     reminderConsent: "No",
   });
   const ts = formatNyTimestamp(new Date("2026-10-17T15:30:00Z"));
-  const row = buildMarionRegistrationRow(parsed, ts);
-  assert(row.length === 12, "row length 12");
+  const registrationId = createRegistrationId();
+  const row = buildRegistrationRow(parsed, { registrationId, submittedAt: ts });
+  assert(row.length === 13, "row length 13");
   assert(row.length === MARION_REGISTRATION_HEADERS.length, "matches headers");
-  assert(row[0] === ts, "timestamp");
-  assert(row[1] === "Ada Lovelace", "name");
-  assert(row[2] === "(954) 555-1234", "phone as text");
-  assert(row[3] === "", "blank email");
-  assert(row[11] === "No", "consent");
-  ok("maps all twelve columns correctly");
+  assert(row[0] === registrationId, "registration id");
+  assert(row[1] === ts, "timestamp");
+  assert(row[2] === "Ada Lovelace", "name");
+  assert(row[3] === "(954) 555-1234", "phone as text");
+  assert(row[4] === "", "blank email");
+  assert(row[12] === "No", "consent");
+  ok("maps all thirteen columns correctly");
 }
 
 console.log(`\nAll ${passed} checks passed.`);
