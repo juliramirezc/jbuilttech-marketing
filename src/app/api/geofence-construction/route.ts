@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { assertGoogleDriveConfigured, getMissingGoogleEnvNames } from "@/lib/googleDrive";
 import {
+  locationOptionsForForm,
   resolveCityArea,
   resolveGeofenceFormConfig,
   resolveLeadSource,
@@ -78,15 +79,16 @@ export async function POST(request: Request) {
   // Server-side force — never trust client destination fields
   const sheetTab = config.sheetTab;
   const leadSource = resolveLeadSource(data.utmMedium);
-  const isPainter = config.formKey === "painter-industrial";
+  const locationOptions = locationOptionsForForm(config.formKey);
 
   let cityArea = "";
   let preferredProjectLocation = "";
 
-  if (isPainter) {
+  if (locationOptions) {
     const location = resolveProjectLocation(
       data.preferredProjectLocation,
-      data.customProjectLocation
+      data.customProjectLocation,
+      locationOptions
     );
     if (!location) {
       return NextResponse.json(

@@ -23,6 +23,15 @@ export const GEOFENCE_FORM_CONFIG = {
     driveFolderName: "Applications Construction",
     headersKey: "painting" as const,
   },
+  "drywall-finisher": {
+    formKey: "drywall-finisher",
+    spreadsheetName: "Applications Construction",
+    sheetTab: "Drywall",
+    trade: "Drywall",
+    formType: "geofence-construction",
+    driveFolderName: "Applications Construction",
+    headersKey: "drywall" as const,
+  },
 } as const;
 
 export type GeofenceFormKey = keyof typeof GEOFENCE_FORM_CONFIG;
@@ -42,8 +51,11 @@ export const GLAZIERS_HEADERS = [
   "Paid/ Organic",
 ] as const;
 
-/** Painting tab headers — Glaziers structure without City/Area + Preferred Project Location. */
-export const PAINTING_HEADERS = [
+/**
+ * Shared column layout for Painting and Drywall tabs
+ * (no City/Area; Preferred Project Location in column I).
+ */
+export const LOCATION_TRADE_HEADERS = [
   "Name",
   "Last name",
   "Email",
@@ -54,6 +66,9 @@ export const PAINTING_HEADERS = [
   "Paid/ Organic",
   "Preferred Project Location",
 ] as const;
+
+/** @deprecated Prefer LOCATION_TRADE_HEADERS — kept for existing imports. */
+export const PAINTING_HEADERS = LOCATION_TRADE_HEADERS;
 
 export const CITY_AREA_OPTIONS = [
   "Fort Myers",
@@ -68,6 +83,7 @@ export const CITY_AREA_OPTIONS = [
 
 export type CityAreaOption = (typeof CITY_AREA_OPTIONS)[number];
 
+/** Industrial Painter location options. */
 export const PROJECT_LOCATION_OPTIONS = [
   "Tampa, FL",
   "Jacksonville, FL",
@@ -76,6 +92,16 @@ export const PROJECT_LOCATION_OPTIONS = [
 
 export type ProjectLocationOption =
   (typeof PROJECT_LOCATION_OPTIONS)[number];
+
+/** Drywall Finisher location options. */
+export const DRYWALL_PROJECT_LOCATION_OPTIONS = [
+  "Tampa, FL",
+  "St. Petersburg, FL",
+  "Other",
+] as const;
+
+export type DrywallProjectLocationOption =
+  (typeof DRYWALL_PROJECT_LOCATION_OPTIONS)[number];
 
 /** Submitted option values match dc78-glazing-application-vercel.html */
 export const EXPERIENCE_LENGTH_OPTIONS = [
@@ -126,18 +152,16 @@ export function resolveCityArea(
 }
 
 /**
- * Resolve preferred project location for Painting.
- * Tampa/Jacksonville written as-is; Other uses the trimmed custom location.
+ * Resolve preferred project location for location-based trades.
+ * Predefined cities written as-is; Other uses the trimmed custom location.
  */
 export function resolveProjectLocation(
   preferredProjectLocation?: string | null,
-  customProjectLocation?: string | null
+  customProjectLocation?: string | null,
+  allowedOptions: readonly string[] = PROJECT_LOCATION_OPTIONS
 ): string | null {
   const selected = (preferredProjectLocation || "").trim();
-  if (
-    !PROJECT_LOCATION_OPTIONS.includes(selected as ProjectLocationOption) ||
-    selected === ""
-  ) {
+  if (!allowedOptions.includes(selected) || selected === "") {
     return null;
   }
   if (selected === "Other") {
@@ -147,8 +171,25 @@ export function resolveProjectLocation(
   return selected;
 }
 
+export function locationOptionsForForm(
+  formKey: string
+): readonly string[] | null {
+  if (formKey === "painter-industrial") return PROJECT_LOCATION_OPTIONS;
+  if (formKey === "drywall-finisher") return DRYWALL_PROJECT_LOCATION_OPTIONS;
+  return null;
+}
+
+export function usesLocationTradeSheet(
+  headersKey: GeofenceFormConfig["headersKey"]
+): boolean {
+  return headersKey === "painting" || headersKey === "drywall";
+}
+
 export function headersForForm(config: GeofenceFormConfig): readonly string[] {
-  return config.headersKey === "painting" ? PAINTING_HEADERS : GLAZIERS_HEADERS;
+  if (usesLocationTradeSheet(config.headersKey)) {
+    return LOCATION_TRADE_HEADERS;
+  }
+  return GLAZIERS_HEADERS;
 }
 
 export const geofenceApplicationSchema = z
@@ -165,10 +206,10 @@ export const geofenceApplicationSchema = z
     fullName: z.string().max(240).optional(),
     email: z.string().email().max(254),
     phone: z.string().min(7).max(40),
-    /** Required for Glaziers; ignored for Painting. */
+    /** Required for Glaziers; ignored for location-trade forms. */
     cityArea: z.string().max(120).optional().default(""),
     customCity: z.string().max(120).optional().default(""),
-    /** Required for Painting; ignored for Glaziers. */
+    /** Required for Painting/Drywall; ignored for Glaziers. */
     preferredProjectLocation: z.string().max(120).optional().default(""),
     customProjectLocation: z.string().max(120).optional().default(""),
     hasTradeExperience: z.enum(["Yes", "No"]),
@@ -184,14 +225,10 @@ export const geofenceApplicationSchema = z
   })
   .superRefine((data, ctx) => {
     const formKey = data.formKey || "glazier-paid-ad";
-    const isPainter = formKey === "painter-industrial";
+    const locationOptions = locationOptionsForForm(formKey);
 
-    if (isPainter) {
-      if (
-        !PROJECT_LOCATION_OPTIONS.includes(
-          data.preferredProjectLocation as ProjectLocationOption
-        )
-      ) {
+    if (locationOptions) {
+      if (!locationOptions.includes(data.preferredProjectLocation || "")) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Please select which location you are applying for",

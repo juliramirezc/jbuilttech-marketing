@@ -7,6 +7,7 @@ import {
 } from "@/lib/googleDrive";
 import {
   headersForForm,
+  usesLocationTradeSheet,
   type GeofenceFormConfig,
   type LeadSource,
 } from "@/lib/geofenceForms";
@@ -189,8 +190,8 @@ export function buildGlaziersSheetRow(options: {
   ];
 }
 
-/** Build the 9-cell row written to the Painting tab. */
-export function buildPaintingSheetRow(options: {
+/** Build the 9-cell row written to Painting / Drywall tabs. */
+export function buildLocationTradeSheetRow(options: {
   firstName: string;
   lastName: string;
   email: string;
@@ -217,6 +218,9 @@ export function buildPaintingSheetRow(options: {
   ];
 }
 
+/** @deprecated Prefer buildLocationTradeSheetRow */
+export const buildPaintingSheetRow = buildLocationTradeSheetRow;
+
 export async function appendGeofenceApplicationRow(options: {
   spreadsheetId: string;
   sheetTab: string;
@@ -233,30 +237,29 @@ export async function appendGeofenceApplicationRow(options: {
   leadSource: LeadSource;
 }): Promise<void> {
   const sheets = getSheetsClient();
-  const row =
-    options.headersKey === "painting"
-      ? buildPaintingSheetRow({
-          firstName: options.firstName,
-          lastName: options.lastName,
-          email: options.email,
-          phone: options.phone,
-          hasTradeExperience: options.hasTradeExperience,
-          experienceLength: options.experienceLength,
-          callAvailability: options.callAvailability,
-          leadSource: options.leadSource,
-          preferredProjectLocation: options.preferredProjectLocation || "",
-        })
-      : buildGlaziersSheetRow({
-          firstName: options.firstName,
-          lastName: options.lastName,
-          email: options.email,
-          phone: options.phone,
-          cityArea: options.cityArea || "",
-          hasTradeExperience: options.hasTradeExperience,
-          experienceLength: options.experienceLength,
-          callAvailability: options.callAvailability,
-          leadSource: options.leadSource,
-        });
+  const row = usesLocationTradeSheet(options.headersKey)
+    ? buildLocationTradeSheetRow({
+        firstName: options.firstName,
+        lastName: options.lastName,
+        email: options.email,
+        phone: options.phone,
+        hasTradeExperience: options.hasTradeExperience,
+        experienceLength: options.experienceLength,
+        callAvailability: options.callAvailability,
+        leadSource: options.leadSource,
+        preferredProjectLocation: options.preferredProjectLocation || "",
+      })
+    : buildGlaziersSheetRow({
+        firstName: options.firstName,
+        lastName: options.lastName,
+        email: options.email,
+        phone: options.phone,
+        cityArea: options.cityArea || "",
+        hasTradeExperience: options.hasTradeExperience,
+        experienceLength: options.experienceLength,
+        callAvailability: options.callAvailability,
+        leadSource: options.leadSource,
+      });
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: options.spreadsheetId,
