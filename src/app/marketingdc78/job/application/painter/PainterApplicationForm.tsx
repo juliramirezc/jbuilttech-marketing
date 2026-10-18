@@ -43,6 +43,7 @@ export function PainterApplicationForm() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [preferredProjectLocation, setPreferredProjectLocation] = useState("");
+  const [customProjectLocation, setCustomProjectLocation] = useState("");
   const [hasTradeExperience, setHasTradeExperience] = useState<
     "" | "Yes" | "No"
   >("");
@@ -51,6 +52,11 @@ export function PainterApplicationForm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  function onProjectLocationChange(value: string) {
+    setPreferredProjectLocation(value);
+    if (value !== "Other") setCustomProjectLocation("");
+  }
 
   function onExperienceChange(value: "Yes" | "No") {
     setHasTradeExperience(value);
@@ -76,7 +82,11 @@ export function PainterApplicationForm() {
       return;
     }
     if (!preferredProjectLocation) {
-      setError("Please select your preferred project location.");
+      setError("Please select which location you are applying for.");
+      return;
+    }
+    if (preferredProjectLocation === "Other" && !customProjectLocation.trim()) {
+      setError("Please enter your preferred location.");
       return;
     }
     if (!hasTradeExperience) {
@@ -113,6 +123,10 @@ export function PainterApplicationForm() {
           email: email.trim(),
           phone: phone.trim(),
           preferredProjectLocation,
+          customProjectLocation:
+            preferredProjectLocation === "Other"
+              ? customProjectLocation.trim()
+              : "",
           hasTradeExperience,
           experienceLength:
             hasTradeExperience === "Yes" ? experienceLength : "",
@@ -181,72 +195,20 @@ export function PainterApplicationForm() {
               <div className="eyebrow">Industrial Painter Opportunities</div>
               <h1>Apply to Work as an Industrial Painter</h1>
               <p className="hero-copy">
-                Industrial Painter Journey Worker Opportunities — Tampa &amp;
-                Jacksonville, Florida
+                Complete the application so our team can contact you about the
+                opportunity and the next steps.
               </p>
 
               <div className="pay-card" aria-label="Compensation information">
-                <div className="pay-label">Trade</div>
-                <div className="pay-amount" style={{ fontSize: "1.15rem" }}>
-                  Industrial Painter Journey Worker
-                </div>
-
-                <p className="pay-copy" style={{ marginTop: "0.85rem" }}>
-                  <strong>Project Locations</strong>
-                  <br />
-                  Tampa, FL
-                  <br />
-                  Jacksonville, FL
-                </p>
-
-                <p className="pay-small">
-                  Workforce Needed: As many qualified candidates as possible.
-                </p>
-
-                <div className="pay-label" style={{ marginTop: "1rem" }}>
-                  Compensation
-                </div>
+                <div className="pay-label">Pay + benefits</div>
+                <div className="pay-amount">💲 $45.09/hour</div>
                 <p className="pay-copy">
-                  Journey Worker Industrial Painter:
-                  <br />
-                  <strong>$27.77/hour — On the Check</strong>
-                  <br />
-                  <strong>$43.45/hour — Total Hourly Package</strong>
+                  Including benefits. Details will be explained during the
+                  interview. <strong>Do not miss the call.</strong>
                 </p>
                 <p className="pay-small">
-                  Direct hourly pay and the total hourly compensation package
-                  are separate figures.
-                </p>
-
-                <div className="pay-label" style={{ marginTop: "1rem" }}>
-                  Union Benefits
-                </div>
-                <p className="pay-copy">
-                  Family healthcare coverage
-                  <br />
-                  Pension plan
-                  <br />
-                  Training and certification courses provided through the union
-                </p>
-
-                <div className="pay-label" style={{ marginTop: "1rem" }}>
-                  Recruitment Contact
-                </div>
-                <p className="pay-copy">
-                  <strong>Luis Ortega — Council Representative</strong>
-                  <br />
-                  Phone:{" "}
-                  <a href="tel:3216664772" style={{ color: "inherit" }}>
-                    321-666-4772
-                  </a>
-                  <br />
-                  Email:{" "}
-                  <a
-                    href="mailto:lortega@dc78.org"
-                    style={{ color: "inherit" }}
-                  >
-                    lortega@dc78.org
-                  </a>
+                  An interview is required to review your qualifications to work
+                  as an Industrial Painter.
                 </p>
               </div>
             </div>
@@ -341,7 +303,7 @@ export function PainterApplicationForm() {
 
                   <div className="field">
                     <label htmlFor="preferredProjectLocation">
-                      Preferred Project Location{" "}
+                      Which location are you applying for?{" "}
                       <span className="req">*</span>
                     </label>
                     <select
@@ -349,9 +311,7 @@ export function PainterApplicationForm() {
                       name="preferredProjectLocation"
                       required
                       value={preferredProjectLocation}
-                      onChange={(e) =>
-                        setPreferredProjectLocation(e.target.value)
-                      }
+                      onChange={(e) => onProjectLocationChange(e.target.value)}
                     >
                       <option value="">Select a location</option>
                       {PROJECT_LOCATION_OPTIONS.map((opt) => (
@@ -362,9 +322,30 @@ export function PainterApplicationForm() {
                     </select>
                   </div>
 
+                  <div
+                    className={`field conditional${
+                      preferredProjectLocation === "Other" ? " show" : ""
+                    }`}
+                  >
+                    <label htmlFor="customProjectLocation">
+                      Please enter your preferred location{" "}
+                      <span className="req">*</span>
+                    </label>
+                    <input
+                      id="customProjectLocation"
+                      name="customProjectLocation"
+                      type="text"
+                      autoComplete="address-level2"
+                      required={preferredProjectLocation === "Other"}
+                      placeholder="City, State"
+                      value={customProjectLocation}
+                      onChange={(e) => setCustomProjectLocation(e.target.value)}
+                    />
+                  </div>
+
                   <div className="field">
                     <span className="field-label">
-                      Do you have experience on the trade?{" "}
+                      Do you have experience in the trade?{" "}
                       <span className="req">*</span>
                     </span>
                     <div
@@ -448,7 +429,7 @@ export function PainterApplicationForm() {
                       id="trade"
                       name="trade"
                       type="text"
-                      value="Industrial Painter Journey Worker"
+                      value="Industrial Painter"
                       readOnly
                       aria-readonly="true"
                     />
@@ -482,15 +463,16 @@ export function PainterApplicationForm() {
                     <h3>Application Submitted Successfully!</h3>
                     <p>
                       <strong>
-                        Thank you for applying for an Industrial Painter Journey
-                        Worker opportunity with DC78. Your information has been
-                        received.
+                        Thank you for applying for an Industrial Painter
+                        opportunity with DC78.
                       </strong>
                     </p>
+                    <p>Your information has been received.</p>
                     <span className="small">
-                      For recruitment questions, contact Luis Ortega at{" "}
-                      <a href="tel:3216664772">321-666-4772</a> or{" "}
-                      <a href="mailto:lortega@dc78.org">lortega@dc78.org</a>.
+                      <strong>
+                        Please keep your phone available. Do not miss a call
+                        regarding your application.
+                      </strong>
                     </span>
                   </div>
                 </div>

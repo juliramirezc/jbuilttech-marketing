@@ -84,10 +84,16 @@ export async function POST(request: Request) {
   let preferredProjectLocation = "";
 
   if (isPainter) {
-    const location = resolveProjectLocation(data.preferredProjectLocation);
+    const location = resolveProjectLocation(
+      data.preferredProjectLocation,
+      data.customProjectLocation
+    );
     if (!location) {
       return NextResponse.json(
-        { error: "Please select a preferred project location" },
+        {
+          error:
+            "Please select which location you are applying for, or enter your preferred location",
+        },
         { status: 400 }
       );
     }

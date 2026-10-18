@@ -71,7 +71,7 @@ export type CityAreaOption = (typeof CITY_AREA_OPTIONS)[number];
 export const PROJECT_LOCATION_OPTIONS = [
   "Tampa, FL",
   "Jacksonville, FL",
-  "Either Location",
+  "Other",
 ] as const;
 
 export type ProjectLocationOption =
@@ -125,14 +125,24 @@ export function resolveCityArea(
   return selected;
 }
 
+/**
+ * Resolve preferred project location for Painting.
+ * Tampa/Jacksonville written as-is; Other uses the trimmed custom location.
+ */
 export function resolveProjectLocation(
-  preferredProjectLocation?: string | null
+  preferredProjectLocation?: string | null,
+  customProjectLocation?: string | null
 ): string | null {
   const selected = (preferredProjectLocation || "").trim();
   if (
-    !PROJECT_LOCATION_OPTIONS.includes(selected as ProjectLocationOption)
+    !PROJECT_LOCATION_OPTIONS.includes(selected as ProjectLocationOption) ||
+    selected === ""
   ) {
     return null;
+  }
+  if (selected === "Other") {
+    const custom = (customProjectLocation || "").trim();
+    return custom.length > 0 ? custom : null;
   }
   return selected;
 }
@@ -160,6 +170,7 @@ export const geofenceApplicationSchema = z
     customCity: z.string().max(120).optional().default(""),
     /** Required for Painting; ignored for Glaziers. */
     preferredProjectLocation: z.string().max(120).optional().default(""),
+    customProjectLocation: z.string().max(120).optional().default(""),
     hasTradeExperience: z.enum(["Yes", "No"]),
     experienceLength: z.string().max(80).optional().default(""),
     callAvailability: z.string().min(1).max(120),
@@ -183,9 +194,17 @@ export const geofenceApplicationSchema = z
       ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Please select a preferred project location",
+          message: "Please select which location you are applying for",
           path: ["preferredProjectLocation"],
         });
+      } else if (data.preferredProjectLocation === "Other") {
+        if (!(data.customProjectLocation || "").trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please enter your preferred location",
+            path: ["customProjectLocation"],
+          });
+        }
       }
     } else {
       if (

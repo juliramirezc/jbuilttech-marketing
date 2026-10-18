@@ -4,7 +4,7 @@ import { PainterApplicationForm } from "./PainterApplicationForm";
 export const metadata: Metadata = {
   title: "Apply to Work as an Industrial Painter | DC78",
   description:
-    "Apply for Industrial Painter Journey Worker opportunities in Tampa and Jacksonville, Florida. Learn about hourly compensation, union benefits, and submit your application to DC78.",
+    "Apply for Industrial Painter opportunities with DC78. $45.09/hour including benefits. Submit your application today.",
   robots: {
     index: false,
     follow: false,
