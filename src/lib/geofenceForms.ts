@@ -32,6 +32,15 @@ export const GEOFENCE_FORM_CONFIG = {
     driveFolderName: "Applications Construction",
     headersKey: "drywall" as const,
   },
+  "wall-covering": {
+    formKey: "wall-covering",
+    spreadsheetName: "Applications Construction",
+    sheetTab: "Wall Covering",
+    trade: "Wall Covering",
+    formType: "geofence-construction",
+    driveFolderName: "Applications Construction",
+    headersKey: "wall-covering" as const,
+  },
 } as const;
 
 export type GeofenceFormKey = keyof typeof GEOFENCE_FORM_CONFIG;
@@ -52,7 +61,7 @@ export const GLAZIERS_HEADERS = [
 ] as const;
 
 /**
- * Shared column layout for Painting and Drywall tabs
+ * Shared column layout for Painting / Drywall / Wall Covering tabs
  * (no City/Area; Preferred Project Location in column I).
  */
 export const LOCATION_TRADE_HEADERS = [
@@ -93,7 +102,7 @@ export const PROJECT_LOCATION_OPTIONS = [
 export type ProjectLocationOption =
   (typeof PROJECT_LOCATION_OPTIONS)[number];
 
-/** Drywall Finisher location options. */
+/** Drywall / Wall Covering location options (Tampa, St. Pete, Other). */
 export const DRYWALL_PROJECT_LOCATION_OPTIONS = [
   "Tampa, FL",
   "St. Petersburg, FL",
@@ -102,6 +111,10 @@ export const DRYWALL_PROJECT_LOCATION_OPTIONS = [
 
 export type DrywallProjectLocationOption =
   (typeof DRYWALL_PROJECT_LOCATION_OPTIONS)[number];
+
+/** Same locations as Drywall — shared Tampa / St. Petersburg / Other set. */
+export const WALL_COVERING_PROJECT_LOCATION_OPTIONS =
+  DRYWALL_PROJECT_LOCATION_OPTIONS;
 
 /** Submitted option values match dc78-glazing-application-vercel.html */
 export const EXPERIENCE_LENGTH_OPTIONS = [
@@ -176,13 +189,18 @@ export function locationOptionsForForm(
 ): readonly string[] | null {
   if (formKey === "painter-industrial") return PROJECT_LOCATION_OPTIONS;
   if (formKey === "drywall-finisher") return DRYWALL_PROJECT_LOCATION_OPTIONS;
+  if (formKey === "wall-covering") return WALL_COVERING_PROJECT_LOCATION_OPTIONS;
   return null;
 }
 
 export function usesLocationTradeSheet(
   headersKey: GeofenceFormConfig["headersKey"]
 ): boolean {
-  return headersKey === "painting" || headersKey === "drywall";
+  return (
+    headersKey === "painting" ||
+    headersKey === "drywall" ||
+    headersKey === "wall-covering"
+  );
 }
 
 export function headersForForm(config: GeofenceFormConfig): readonly string[] {
