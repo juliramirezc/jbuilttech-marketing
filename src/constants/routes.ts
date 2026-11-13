@@ -37,6 +37,7 @@ export const ROUTES = {
   ABOUT: "/about",
   CONTACT: "/contact",
   CONSULTATION: "/consultation",
+  BOOK_REVIEW: "/book-review",
   THANK_YOU: "/thank-you",
   
   // Legal

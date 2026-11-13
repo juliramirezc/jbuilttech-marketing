@@ -6,7 +6,7 @@ const SITE_URL = "https://build.jbuilttech.com";
  * Public routes that exist in the App Router.
  * Add entries here as new pages ship.
  */
-const PUBLIC_ROUTES = ["/"] as const;
+const PUBLIC_ROUTES = ["/", "/book-review"] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();

@@ -18,6 +18,12 @@ export {
   CALENDLY_REDIRECT_URL,
 } from "./links";
 export {
+  parseGoogleBookingUrl,
+  resolveGoogleBookingConfig,
+  getConfiguredGoogleBookingUrl,
+  type GoogleBookingUrlResult,
+} from "./googleBooking";
+export {
   openCalendlyPopup,
   isCalendlyEventScheduled,
   CALENDLY_THANK_YOU_PATH,

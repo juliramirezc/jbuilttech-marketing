@@ -5,5 +5,6 @@ export {
   integrationsConfig,
   CALENDLY_BOOKING_URL,
   CALENDLY_REDIRECT_URL,
+  GOOGLE_BOOKING_URL,
   type IntegrationsConfig,
 } from "./integrations";
