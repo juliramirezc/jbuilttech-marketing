@@ -40,6 +40,9 @@ export const ROUTES = {
   BOOK_REVIEW: "/book-review",
   THANK_YOU: "/thank-you",
   
+  // Careers
+  CAREERS_GLASS_FABRICATION: "/careers/glass-fabrication",
+
   // Legal
   PRIVACY: "/privacy",
   TERMS: "/terms",

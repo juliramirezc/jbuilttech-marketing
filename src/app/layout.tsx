@@ -1,8 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { headers } from "next/headers";
 import { GoogleTagManager } from "@next/third-parties/google";
 import { CalendlyProvider } from "@/components/calendly";
 import { LeadProvider } from "@/components/lead";
+import {
+  TRACKING_ISOLATION_HEADER,
+  TRACKING_ISOLATION_VALUE,
+} from "@/lib/trackingIsolation";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -56,28 +61,36 @@ export const viewport: Viewport = {
 
 const GOOGLE_ADS_ID = "AW-18330253504";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headerStore = await headers();
+  const trackingIsolated =
+    headerStore.get(TRACKING_ISOLATION_HEADER) === TRACKING_ISOLATION_VALUE;
+
   return (
     <html lang="en">
-      <GoogleTagManager gtmId="GTM-MGZPGP8C" />
+      {!trackingIsolated ? <GoogleTagManager gtmId="GTM-MGZPGP8C" /> : null}
       <body className="min-h-screen bg-[#0B0B0B] text-white antialiased">
-        {/* Google tag (gtag.js) — Google Ads */}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_ID}`}
-          strategy="afterInteractive"
-        />
-        <Script id="google-ads-gtag" strategy="afterInteractive">
-          {`
+        {!trackingIsolated ? (
+          <>
+            {/* Google tag (gtag.js) — Google Ads */}
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-ads-gtag" strategy="afterInteractive">
+              {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', '${GOOGLE_ADS_ID}');
           `}
-        </Script>
+            </Script>
+          </>
+        ) : null}
 
         {/* Subtle noise texture for premium feel */}
         <div className="noise-overlay" aria-hidden="true" />

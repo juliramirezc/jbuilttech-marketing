@@ -14,6 +14,7 @@ import { usePathname } from "next/navigation";
 import { LeadModal } from "./LeadModal";
 import { ReferralDelayPopup } from "./ReferralDelayPopup";
 import { pushDataLayerEvent } from "@/lib/analytics";
+import { isTrackingIsolatedPath } from "@/lib/trackingIsolation";
 
 const LEAD_SUBMITTED_KEY = "jbuilttech_lead_submitted";
 const REFERRAL_DISMISSED_KEY = "jbuilttech_referral_popup_dismissed";
@@ -63,10 +64,12 @@ function writeSessionFlag(key: string): void {
 
 export function LeadProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  /** Member-story and other /dc78 routes must not show marketing referral promo */
+  /** Member-story, DC78, and tracking-isolated careers must not show marketing referral promo */
   const suppressReferralPromo =
     typeof pathname === "string" &&
-    (pathname.startsWith("/dc78") || pathname.startsWith("/marketingdc78"));
+    (pathname.startsWith("/dc78") ||
+      pathname.startsWith("/marketingdc78") ||
+      isTrackingIsolatedPath(pathname));
 
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [modalSource, setModalSource] = useState<LeadFormSource>("hero_primary");

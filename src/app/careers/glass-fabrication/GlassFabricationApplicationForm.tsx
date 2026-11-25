@@ -3,19 +3,22 @@
 import { FormEvent, useRef, useState } from "react";
 import {
   CALL_AVAILABILITY_OPTIONS,
-  GLASS_FABRICATION_AREA_OPTIONS,
+  GLASS_FABRICATION_DURATION_OPTIONS,
   GLASS_FABRICATION_LOCATION_OPTIONS,
+  GLASS_FABRICATION_SPECIALIZATIONS,
   GLASS_FABRICATION_YEARS_WITH_EXPERIENCE,
 } from "@/lib/geofenceForms";
-import { pushDataLayerEvent } from "@/lib/analytics";
-import "../glazier/glazier-application.css";
-
-const BRAND_IMAGE = "/images/dc78-logo.png";
-const BRAND_FALLBACK_IMAGE =
-  "https://img1.wsimg.com/isteam/ip/3546aeda-652b-4ef2-b76c-731b538bafca/IUPAT%20Website%20Banner-0001.jpg/%3A/";
+import {
+  TrackingIsolationGuard,
+  recordIsolatedApplicationEvent,
+} from "@/components/tracking/TrackingIsolationGuard";
+import "./glass-fabrication.css";
 
 const FORM_KEY = "glass-fabrication";
+const PAGE_PATH = "/careers/glass-fabrication";
 const NO_PREVIOUS_EXPERIENCE = "No previous experience";
+
+const SPECIALIZATION_SET = new Set<string>(GLASS_FABRICATION_SPECIALIZATIONS);
 
 const CALL_AVAILABILITY_LABELS: Record<string, string> = {
   "Morning (8:00 AM - 11:00 AM)": "Morning — 8:00 AM to 11:00 AM",
@@ -25,13 +28,6 @@ const CALL_AVAILABILITY_LABELS: Record<string, string> = {
   "Flexible / Any time": "Flexible / Any time",
 };
 
-declare global {
-  interface Window {
-    fbq?: (...args: unknown[]) => void;
-    __dc78GlassFabricationLeadFired?: boolean;
-  }
-}
-
 function createSubmissionId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -39,28 +35,7 @@ function createSubmissionId() {
   return `glass-fab-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-/** Fire Lead once after a successful save — never includes applicant PII. */
-function trackSuccessfulApplicationLead() {
-  if (typeof window === "undefined") return;
-  if (window.__dc78GlassFabricationLeadFired) return;
-  window.__dc78GlassFabricationLeadFired = true;
-
-  pushDataLayerEvent("dc78_application_submitted", {
-    form_key: FORM_KEY,
-    page_path: "/marketingdc78/job/application/glass-fabrication",
-  });
-
-  try {
-    if (typeof window.fbq === "function") {
-      window.fbq("track", "Lead");
-    }
-  } catch {
-    // ignore pixel failures
-  }
-}
-
 export function GlassFabricationApplicationForm() {
-  const [logoSrc, setLogoSrc] = useState(BRAND_IMAGE);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -70,6 +45,9 @@ export function GlassFabricationApplicationForm() {
     "" | "Yes" | "No"
   >("");
   const [areasOfExperience, setAreasOfExperience] = useState<string[]>([]);
+  const [specializationExperience, setSpecializationExperience] = useState<
+    Record<string, string>
+  >({});
   const [otherExperience, setOtherExperience] = useState("");
   const [yearsOfExperience, setYearsOfExperience] = useState("");
   const [callAvailability, setCallAvailability] = useState("");
@@ -77,18 +55,14 @@ export function GlassFabricationApplicationForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const submittingRef = useRef(false);
-
-  function onLogoError() {
-    setLogoSrc((current) =>
-      current !== BRAND_FALLBACK_IMAGE ? BRAND_FALLBACK_IMAGE : current
-    );
-  }
+  const eventRecordedRef = useRef(false);
 
   function onExperienceChange(value: "Yes" | "No") {
     setHasTradeExperience(value);
     if (value === "No") {
       setYearsOfExperience("No experience");
       setAreasOfExperience([NO_PREVIOUS_EXPERIENCE]);
+      setSpecializationExperience({});
       setOtherExperience("");
       return;
     }
@@ -100,24 +74,27 @@ export function GlassFabricationApplicationForm() {
 
   function toggleArea(area: string) {
     if (hasTradeExperience !== "Yes") return;
+    if (!SPECIALIZATION_SET.has(area)) return;
 
-    if (area === NO_PREVIOUS_EXPERIENCE) {
-      setAreasOfExperience([NO_PREVIOUS_EXPERIENCE]);
-      setOtherExperience("");
+    const withoutNone = areasOfExperience.filter(
+      (item) => item !== NO_PREVIOUS_EXPERIENCE
+    );
+
+    if (withoutNone.includes(area)) {
+      setSpecializationExperience((prev) => {
+        const next = { ...prev };
+        delete next[area];
+        return next;
+      });
+      setAreasOfExperience(withoutNone.filter((item) => item !== area));
       return;
     }
 
-    setAreasOfExperience((current) => {
-      const withoutNone = current.filter(
-        (item) => item !== NO_PREVIOUS_EXPERIENCE
-      );
-      if (withoutNone.includes(area)) {
-        const next = withoutNone.filter((item) => item !== area);
-        if (area === "Other") setOtherExperience("");
-        return next;
-      }
-      return [...withoutNone, area];
-    });
+    setAreasOfExperience([...withoutNone, area]);
+  }
+
+  function setDuration(skill: string, duration: string) {
+    setSpecializationExperience((prev) => ({ ...prev, [skill]: duration }));
   }
 
   async function onSubmit(e: FormEvent) {
@@ -147,12 +124,24 @@ export function GlassFabricationApplicationForm() {
     const resolvedAreas =
       hasTradeExperience === "No"
         ? [NO_PREVIOUS_EXPERIENCE]
-        : areasOfExperience.filter(
-            (area) => area !== NO_PREVIOUS_EXPERIENCE
-          );
+        : areasOfExperience.filter((area) => area !== NO_PREVIOUS_EXPERIENCE);
 
     if (hasTradeExperience === "Yes" && resolvedAreas.length === 0) {
       setError("Please select at least one area of experience.");
+      return;
+    }
+
+    const selectedSkills = resolvedAreas.filter((area) =>
+      SPECIALIZATION_SET.has(area)
+    );
+    const missingDuration =
+      hasTradeExperience === "Yes"
+        ? selectedSkills.find((skill) => !specializationExperience[skill])
+        : undefined;
+    if (missingDuration) {
+      setError(
+        `Please select how long you have worked in ${missingDuration}.`
+      );
       return;
     }
 
@@ -175,6 +164,13 @@ export function GlassFabricationApplicationForm() {
         ? new URLSearchParams(window.location.search).get("utm_medium") || ""
         : "";
 
+    const durations: Record<string, string> = {};
+    if (hasTradeExperience === "Yes") {
+      for (const skill of selectedSkills) {
+        durations[skill] = specializationExperience[skill];
+      }
+    }
+
     try {
       const res = await fetch("/api/geofence-construction", {
         method: "POST",
@@ -192,9 +188,9 @@ export function GlassFabricationApplicationForm() {
           hasTradeExperience,
           experienceLength: "",
           areasOfExperience: resolvedAreas,
-          otherExperience: resolvedAreas.includes("Other")
-            ? otherExperience.trim()
-            : "",
+          specializationExperience: durations,
+          otherExperience:
+            hasTradeExperience === "Yes" ? otherExperience.trim() : "",
           yearsOfExperience:
             hasTradeExperience === "Yes" ? yearsOfExperience : "No experience",
           callAvailability,
@@ -213,7 +209,14 @@ export function GlassFabricationApplicationForm() {
         return;
       }
 
-      trackSuccessfulApplicationLead();
+      // Isolated route: local-only event, no shared dataLayer / GTM / Meta pixel.
+      if (!eventRecordedRef.current) {
+        eventRecordedRef.current = true;
+        recordIsolatedApplicationEvent("glass_fabrication_application_submitted", {
+          form_key: FORM_KEY,
+          page_path: PAGE_PATH,
+        });
+      }
       setSuccess(true);
     } catch {
       setError("Something went wrong. Please try again.");
@@ -224,15 +227,18 @@ export function GlassFabricationApplicationForm() {
   }
 
   const showAreas = hasTradeExperience === "Yes";
-  const showOtherDetails = showAreas && areasOfExperience.includes("Other");
   const showYears = hasTradeExperience === "Yes";
+  const selectedSkills = GLASS_FABRICATION_SPECIALIZATIONS.filter((skill) =>
+    areasOfExperience.includes(skill)
+  );
 
   return (
-    <div className="glaz-page">
+    <div className="gf-page">
+      <TrackingIsolationGuard />
       <main className="page">
         <div className="topbar">
           <div className="brand-line">
-            <span className="dot" /> IUPAT District Council 78
+            <span className="dot" /> Glass Fabrication Careers
           </div>
           <div className="secure-badge">Application form</div>
         </div>
@@ -240,39 +246,24 @@ export function GlassFabricationApplicationForm() {
         <section className="shell">
           <aside className="hero">
             <div>
-              <div
-                className="logo-stage"
-                aria-label="Animated DC 78 brand mark"
-              >
-                <div className="logo-flip">
-                  <div className="logo-face logo-front">
-                    <img
-                      src={logoSrc}
-                      alt="IUPAT District Council 78 brand"
-                      onError={onLogoError}
-                    />
-                  </div>
-                  <div className="logo-face logo-back">
-                    <div>
-                      <div className="dc78-mark">DC 78</div>
-                      <div className="dc78-sub">
-                        Painters &amp; Allied Trades
-                        <br />
-                        District Council 78
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div className="hero-panes" aria-hidden="true">
+                <span />
+                <span />
+                <span />
               </div>
 
-              <div className="eyebrow">Glass Fabrication Opportunities</div>
-              <h1>Glass Fabrication – Employment Opportunities</h1>
+              <div className="eyebrow">Recruitment Application</div>
+              <h1>Glass Fabrication Career Opportunities</h1>
+              <p className="hero-subtitle">Your Experience Matters.</p>
               <p className="hero-copy">
-                Do you have experience working in glass fabrication? IUPAT
-                District Council 78 is looking to connect with skilled glass
-                fabrication workers in Tampa, Palmetto, and Oldsmar, Florida.
-                Complete the application below, and a representative will
-                contact you to discuss available opportunities.
+                We are looking to connect with skilled workers who have
+                experience in the glass fabrication industry in Tampa, Palmetto,
+                and Oldsmar, Florida.
+              </p>
+              <p className="hero-copy" style={{ marginTop: "1rem" }}>
+                Tell us about your skills and professional experience by
+                completing the form below. A recruitment representative will
+                contact you to discuss potential opportunities.
               </p>
             </div>
 
@@ -432,9 +423,7 @@ export function GlassFabricationApplicationForm() {
                       role="group"
                       aria-label="Areas of glass fabrication experience"
                     >
-                      {GLASS_FABRICATION_AREA_OPTIONS.filter(
-                        (area) => area !== NO_PREVIOUS_EXPERIENCE
-                      ).map((area) => (
+                      {GLASS_FABRICATION_SPECIALIZATIONS.map((area) => (
                         <label key={area} className="checkbox-option">
                           <input
                             type="checkbox"
@@ -447,21 +436,50 @@ export function GlassFabricationApplicationForm() {
                         </label>
                       ))}
                     </div>
+
+                    {showAreas && selectedSkills.length > 0 ? (
+                      <div className="skill-durations">
+                        {selectedSkills.map((skill, index) => {
+                          const id = `duration-${index}`;
+                          return (
+                            <div className="field" key={skill}>
+                              <label htmlFor={id}>
+                                How long have you worked in {skill}?{" "}
+                                <span className="req">*</span>
+                              </label>
+                              <select
+                                id={id}
+                                name={`specializationExperience-${skill}`}
+                                required
+                                value={specializationExperience[skill] || ""}
+                                onChange={(e) =>
+                                  setDuration(skill, e.target.value)
+                                }
+                              >
+                                <option value="">Choose one</option>
+                                {GLASS_FABRICATION_DURATION_OPTIONS.map((opt) => (
+                                  <option key={opt} value={opt}>
+                                    {opt}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
                   </div>
 
                   <div
-                    className={`field conditional${
-                      showOtherDetails ? " show" : ""
-                    }`}
+                    className={`field conditional${showAreas ? " show" : ""}`}
                   >
                     <label htmlFor="otherExperience">
-                      Please describe your other experience (optional)
+                      Additional skills and experience (optional)
                     </label>
-                    <input
+                    <textarea
                       id="otherExperience"
                       name="otherExperience"
-                      type="text"
-                      placeholder="Additional details"
+                      placeholder="Share any additional skills or experience"
                       value={otherExperience}
                       onChange={(e) => setOtherExperience(e.target.value)}
                     />
@@ -469,7 +487,7 @@ export function GlassFabricationApplicationForm() {
 
                   <div className={`field conditional${showYears ? " show" : ""}`}>
                     <label htmlFor="yearsOfExperience">
-                      How many years of experience do you have in glass
+                      How many total years of experience do you have in glass
                       fabrication? <span className="req">*</span>
                     </label>
                     <select
@@ -509,25 +527,6 @@ export function GlassFabricationApplicationForm() {
                     </select>
                   </div>
 
-                  <div className="field">
-                    <label htmlFor="trade">Trade</label>
-                    <input
-                      id="trade"
-                      name="trade"
-                      type="text"
-                      value="Glass Fabrication"
-                      readOnly
-                      aria-readonly="true"
-                    />
-                  </div>
-
-                  <input type="hidden" name="source" value="recruitment" />
-                  <input
-                    type="hidden"
-                    name="sheetTab"
-                    value="Glass Fabrication"
-                  />
-
                   <button
                     className="submit-btn"
                     type="submit"
@@ -535,6 +534,13 @@ export function GlassFabricationApplicationForm() {
                   >
                     {busy ? "SUBMITTING..." : "APPLY NOW"}
                   </button>
+
+                  <p className="privacy-note">
+                    This application form is operated by JBuiltTech. The
+                    information you provide is used only to review your
+                    application and to contact you about glass fabrication
+                    opportunities.
+                  </p>
 
                   {error ? (
                     <div
@@ -550,11 +556,11 @@ export function GlassFabricationApplicationForm() {
                 <div className="success-screen show">
                   <div>
                     <div className="success-icon">✓</div>
-                    <h3>Thank you for applying!</h3>
+                    <h3>Thank you for submitting your information!</h3>
                     <p>
-                      Your information has been successfully submitted. A
-                      representative from IUPAT District Council 78 will contact
-                      you to discuss potential glass fabrication opportunities.
+                      A recruitment representative will contact you to discuss
+                      your glass fabrication experience and potential
+                      opportunities.
                     </p>
                   </div>
                 </div>
@@ -563,9 +569,7 @@ export function GlassFabricationApplicationForm() {
           </section>
         </section>
 
-        <div className="footer">
-          District Council 78 • Glass Fabrication Application
-        </div>
+        <div className="footer">Glass Fabrication Application</div>
       </main>
     </div>
   );

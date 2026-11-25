@@ -3,8 +3,10 @@ import { assertGoogleDriveConfigured, getMissingGoogleEnvNames } from "@/lib/goo
 import {
   locationOptionsForForm,
   normalizeGlassFabricationAreas,
+  emptyGlassFabricationSpecializationDurations,
   resolveCityArea,
   resolveGeofenceFormConfig,
+  resolveGlassFabricationSpecializationDurations,
   resolveLeadSource,
   resolveProjectLocation,
   geofenceApplicationSchema,
@@ -130,10 +132,17 @@ export async function POST(request: Request) {
       )
     : [];
   const areasOfExperience = areasList.join(", ");
-  const otherExperience =
-    isGlassFabrication && areasList.includes("Other")
-      ? (data.otherExperience || "").trim()
-      : "";
+  // Optional free text for Glass Fabrication — never required; not gated on an "Other" area.
+  const otherExperience = isGlassFabrication
+    ? (data.otherExperience || "").trim()
+    : "";
+  const specializationDurations = isGlassFabrication
+    ? resolveGlassFabricationSpecializationDurations(
+        areasList,
+        data.specializationExperience,
+        hasTradeExperience
+      )
+    : emptyGlassFabricationSpecializationDurations();
   const yearsOfExperience = isGlassFabrication
     ? hasTradeExperience === "Yes"
       ? data.yearsOfExperience.trim()
@@ -174,6 +183,7 @@ export async function POST(request: Request) {
       otherExperience,
       yearsOfExperience,
       submissionTimestamp,
+      specializationDurations,
     });
 
     return NextResponse.json({

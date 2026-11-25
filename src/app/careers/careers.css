@@ -1,0 +1,4 @@
+/* Hide site-wide noise overlay on standalone careers pages */
+body .noise-overlay {
+  display: none !important;
+}

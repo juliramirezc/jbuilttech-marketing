@@ -6,6 +6,7 @@ import {
   getSheetsClient,
 } from "@/lib/googleDrive";
 import {
+  emptyGlassFabricationSpecializationDurations,
   headersForForm,
   usesGlassFabricationSheet,
   usesLocationTradeSheet,
@@ -222,7 +223,10 @@ export function buildLocationTradeSheetRow(options: {
 /** @deprecated Prefer buildLocationTradeSheetRow */
 export const buildPaintingSheetRow = buildLocationTradeSheetRow;
 
-/** Build the 12-cell row written to the Glass Fabrication tab. */
+/**
+ * Build the 19-cell row written to the Glass Fabrication tab:
+ * original 12 columns followed by 7 per-specialization experience durations.
+ */
 export function buildGlassFabricationSheetRow(options: {
   firstName: string;
   lastName: string;
@@ -236,7 +240,13 @@ export function buildGlassFabricationSheetRow(options: {
   callAvailability: string;
   leadSource: LeadSource;
   submissionTimestamp: string;
+  /** 7 duration cells in GLASS_FABRICATION_SPECIALIZATIONS order. */
+  specializationDurations?: readonly string[];
 }): string[] {
+  const durations = emptyGlassFabricationSpecializationDurations().map(
+    (empty, i) => options.specializationDurations?.[i] ?? empty
+  );
+
   return [
     options.firstName,
     options.lastName,
@@ -250,6 +260,7 @@ export function buildGlassFabricationSheetRow(options: {
     options.callAvailability,
     options.leadSource,
     options.submissionTimestamp,
+    ...durations,
   ];
 }
 
@@ -284,6 +295,7 @@ export async function appendGeofenceApplicationRow(options: {
   otherExperience?: string;
   yearsOfExperience?: string;
   submissionTimestamp?: string;
+  specializationDurations?: readonly string[];
 }): Promise<void> {
   const sheets = getSheetsClient();
   const isGlassFabrication = usesGlassFabricationSheet(options.headersKey);
@@ -303,6 +315,7 @@ export async function appendGeofenceApplicationRow(options: {
         leadSource: options.leadSource,
         submissionTimestamp:
           options.submissionTimestamp || formatGlassFabricationTimestamp(),
+        specializationDurations: options.specializationDurations,
       })
     : usesLocationTradeSheet(options.headersKey)
       ? buildLocationTradeSheetRow({
@@ -329,7 +342,7 @@ export async function appendGeofenceApplicationRow(options: {
         });
 
   const range = isGlassFabrication
-    ? `'${escapeSheetTitle(options.sheetTab)}'!A:L`
+    ? `'${escapeSheetTitle(options.sheetTab)}'!A:S`
     : `'${escapeSheetTitle(options.sheetTab)}'!A:I`;
 
   await sheets.spreadsheets.values.append({

@@ -135,7 +135,11 @@ export const GLASS_FABRICATION_LOCATION_OPTIONS = [
 export type GlassFabricationLocationOption =
   (typeof GLASS_FABRICATION_LOCATION_OPTIONS)[number];
 
-/** Exact Glass Fabrication tab headers — do not change. */
+/**
+ * Glass Fabrication tab headers.
+ * First 12 columns are the original layout (do not reorder); the 7 per-skill
+ * experience-duration columns are appended after them (A:S).
+ */
 export const GLASS_FABRICATION_HEADERS = [
   "First Name",
   "Last Name",
@@ -149,16 +153,44 @@ export const GLASS_FABRICATION_HEADERS = [
   "Availability for Call",
   "Paid/Organic",
   "Submission Timestamp",
+  "Glass Cutting Experience",
+  "Glass Edging and Polishing Experience",
+  "Glass Tempering Experience",
+  "IGU Experience",
+  "Glass Drilling Experience",
+  "CNC Glass Fabrication Experience",
+  "Material Handling Experience",
 ] as const;
 
+/** Specializations that capture a per-skill experience duration (column order matches sheet). */
+export const GLASS_FABRICATION_SPECIALIZATIONS = [
+  "Glass Cutting",
+  "Glass Edging and Polishing",
+  "Glass Tempering",
+  "Insulated Glass Units (IGUs)",
+  "Glass Drilling",
+  "CNC Glass Fabrication",
+  "Material Handling",
+] as const;
+
+export type GlassFabricationSpecialization =
+  (typeof GLASS_FABRICATION_SPECIALIZATIONS)[number];
+
+/** Per-specialization experience duration choices. */
+export const GLASS_FABRICATION_DURATION_OPTIONS = [
+  "0–3 months",
+  "3–6 months",
+  "6–12 months",
+  "1–2 years",
+  "3–5 years",
+  "More than 5 years",
+] as const;
+
+export type GlassFabricationDurationOption =
+  (typeof GLASS_FABRICATION_DURATION_OPTIONS)[number];
+
 export const GLASS_FABRICATION_AREA_OPTIONS = [
-  "Glass cutting",
-  "Glass edging and polishing",
-  "Glass tempering",
-  "Insulated glass units (IGUs)",
-  "Glass drilling",
-  "CNC glass fabrication",
-  "Material handling",
+  ...GLASS_FABRICATION_SPECIALIZATIONS,
   "Other",
   "No previous experience",
 ] as const;
@@ -313,6 +345,35 @@ export function normalizeGlassFabricationAreas(
   return unique.filter((area) => area !== "No previous experience");
 }
 
+/** One empty duration cell per specialization column (7). */
+export function emptyGlassFabricationSpecializationDurations(): string[] {
+  return GLASS_FABRICATION_SPECIALIZATIONS.map(() => "");
+}
+
+/**
+ * Resolve the 7 per-specialization duration cells in sheet column order.
+ * Unselected skills (or applicants without experience) resolve to "".
+ * Unrecognized durations are dropped.
+ */
+export function resolveGlassFabricationSpecializationDurations(
+  areas: readonly string[] | undefined | null,
+  specializationExperience: Record<string, string> | undefined | null,
+  hasTradeExperience: "Yes" | "No"
+): string[] {
+  if (hasTradeExperience !== "Yes") {
+    return emptyGlassFabricationSpecializationDurations();
+  }
+
+  const selected = new Set(normalizeGlassFabricationAreas(areas, "Yes"));
+  const allowedDurations = new Set<string>(GLASS_FABRICATION_DURATION_OPTIONS);
+
+  return GLASS_FABRICATION_SPECIALIZATIONS.map((skill) => {
+    if (!selected.has(skill)) return "";
+    const duration = (specializationExperience?.[skill] || "").trim();
+    return allowedDurations.has(duration) ? duration : "";
+  });
+}
+
 export const geofenceApplicationSchema = z
   .object({
     formKey: z
@@ -338,6 +399,11 @@ export const geofenceApplicationSchema = z
     /** Glass Fabrication multi-select skills. */
     areasOfExperience: z.array(z.string().max(120)).max(20).optional().default([]),
     otherExperience: z.string().max(500).optional().default(""),
+    /** Glass Fabrication: duration per selected specialization (keyed by specialization label). */
+    specializationExperience: z
+      .record(z.string().max(120), z.string().max(80))
+      .optional()
+      .default({}),
     /** Glass Fabrication years options (separate from Glaziers experienceLength). */
     yearsOfExperience: z.string().max(80).optional().default(""),
     callAvailability: z.string().min(1).max(120),
@@ -404,11 +470,23 @@ export const geofenceApplicationSchema = z
         });
       }
 
-      if (areas.includes("Other") && !(data.otherExperience || "").trim()) {
-        // Optional text field per campaign brief — do not block submission.
-      }
+      // otherExperience is always optional for Glass Fabrication.
 
       if (data.hasTradeExperience === "Yes") {
+        const allowedDurations: readonly string[] =
+          GLASS_FABRICATION_DURATION_OPTIONS;
+        for (const skill of GLASS_FABRICATION_SPECIALIZATIONS) {
+          if (!areas.includes(skill)) continue;
+          const duration = (data.specializationExperience?.[skill] || "").trim();
+          if (!allowedDurations.includes(duration)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `Please select how long you have worked in ${skill}`,
+              path: ["specializationExperience", skill],
+            });
+          }
+        }
+
         if (
           !GLASS_FABRICATION_YEARS_WITH_EXPERIENCE.includes(
             data.yearsOfExperience as (typeof GLASS_FABRICATION_YEARS_WITH_EXPERIENCE)[number]

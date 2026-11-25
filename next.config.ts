@@ -20,6 +20,21 @@ const nextConfig: NextConfig = {
     // Quality settings for Next.js 15/16 compatibility
     qualities: [75, 90, 95],
   },
+  async redirects() {
+    return [
+      {
+        // 308 + query string preserved by Next.js redirects
+        source: "/marketingdc78/job/application/glass-fabrication",
+        destination: "/careers/glass-fabrication",
+        permanent: true,
+      },
+      {
+        source: "/marketingdc78/job/application/glass-fabrication/",
+        destination: "/careers/glass-fabrication",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
