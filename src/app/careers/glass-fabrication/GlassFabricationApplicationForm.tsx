@@ -246,12 +246,6 @@ export function GlassFabricationApplicationForm() {
         <section className="shell">
           <aside className="hero">
             <div>
-              <div className="hero-panes" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </div>
-
               <div className="eyebrow">Recruitment Application</div>
               <h1>Glass Fabrication Career Opportunities</h1>
               <p className="hero-subtitle">Your Experience Matters.</p>

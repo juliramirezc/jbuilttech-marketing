@@ -112,26 +112,6 @@
   z-index: -1;
 }
 
-.gf-page .hero-panes {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 34px;
-  max-width: 320px;
-}
-
-.gf-page .hero-panes span {
-  display: block;
-  aspect-ratio: 3 / 4;
-  border: 1px solid rgba(139, 187, 230, 0.35);
-  border-radius: 6px;
-  background: linear-gradient(
-    150deg,
-    rgba(139, 187, 230, 0.22),
-    rgba(91, 155, 213, 0.04) 60%
-  );
-}
-
 .gf-page .eyebrow {
   color: var(--accent-2);
   font-size: 12px;
