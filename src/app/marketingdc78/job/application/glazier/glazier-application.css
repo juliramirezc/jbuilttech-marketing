@@ -452,6 +452,43 @@
   accent-color: var(--yellow);
 }
 
+.glaz-page .checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.glaz-page .checkbox-option {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 50px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.glaz-page .checkbox-option:hover {
+  border-color: rgba(255, 212, 0, 0.48);
+  background: rgba(255, 212, 0, 0.04);
+}
+
+.glaz-page .checkbox-option input {
+  width: 18px;
+  min-height: 18px;
+  height: 18px;
+  padding: 0;
+  margin: 2px 0 0;
+  flex-shrink: 0;
+  accent-color: var(--yellow);
+}
+
 .glaz-page .conditional {
   display: none;
   animation: glazReveal 0.18s ease;
@@ -633,6 +670,9 @@
   }
   .glaz-page .radio-row {
     grid-template-columns: 1fr 1fr;
+  }
+  .glaz-page .checkbox-grid {
+    grid-template-columns: 1fr;
   }
   .glaz-page h1 {
     font-size: 49px;

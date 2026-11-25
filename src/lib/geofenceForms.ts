@@ -41,6 +41,15 @@ export const GEOFENCE_FORM_CONFIG = {
     driveFolderName: "Applications Construction",
     headersKey: "wall-covering" as const,
   },
+  "glass-fabrication": {
+    formKey: "glass-fabrication",
+    spreadsheetName: "Applications Construction",
+    sheetTab: "Glass Fabrication",
+    trade: "Glass Fabrication",
+    formType: "geofence-construction",
+    driveFolderName: "Applications Construction",
+    headersKey: "glass-fabrication" as const,
+  },
 } as const;
 
 export type GeofenceFormKey = keyof typeof GEOFENCE_FORM_CONFIG;
@@ -116,6 +125,68 @@ export type DrywallProjectLocationOption =
 export const WALL_COVERING_PROJECT_LOCATION_OPTIONS =
   DRYWALL_PROJECT_LOCATION_OPTIONS;
 
+/** Glass Fabrication preferred work locations (no custom "Other"). */
+export const GLASS_FABRICATION_LOCATION_OPTIONS = [
+  "Tampa, FL",
+  "Palmetto, FL",
+  "Oldsmar, FL",
+] as const;
+
+export type GlassFabricationLocationOption =
+  (typeof GLASS_FABRICATION_LOCATION_OPTIONS)[number];
+
+/** Exact Glass Fabrication tab headers — do not change. */
+export const GLASS_FABRICATION_HEADERS = [
+  "First Name",
+  "Last Name",
+  "Email",
+  "Phone Number",
+  "Preferred Work Location",
+  "Glass Fabrication Experience",
+  "Areas of Experience",
+  "Other Experience",
+  "Years of Experience",
+  "Availability for Call",
+  "Paid/Organic",
+  "Submission Timestamp",
+] as const;
+
+export const GLASS_FABRICATION_AREA_OPTIONS = [
+  "Glass cutting",
+  "Glass edging and polishing",
+  "Glass tempering",
+  "Insulated glass units (IGUs)",
+  "Glass drilling",
+  "CNC glass fabrication",
+  "Material handling",
+  "Other",
+  "No previous experience",
+] as const;
+
+export type GlassFabricationAreaOption =
+  (typeof GLASS_FABRICATION_AREA_OPTIONS)[number];
+
+export const GLASS_FABRICATION_YEARS_OPTIONS = [
+  "No experience",
+  "Less than 1 year",
+  "1–2 years",
+  "3–5 years",
+  "6–10 years",
+  "More than 10 years",
+] as const;
+
+export type GlassFabricationYearsOption =
+  (typeof GLASS_FABRICATION_YEARS_OPTIONS)[number];
+
+/** Years options shown when applicant reports trade experience. */
+export const GLASS_FABRICATION_YEARS_WITH_EXPERIENCE = [
+  "Less than 1 year",
+  "1–2 years",
+  "3–5 years",
+  "6–10 years",
+  "More than 10 years",
+] as const;
+
 /** Submitted option values match dc78-glazing-application-vercel.html */
 export const EXPERIENCE_LENGTH_OPTIONS = [
   "0-3 months",
@@ -190,6 +261,9 @@ export function locationOptionsForForm(
   if (formKey === "painter-industrial") return PROJECT_LOCATION_OPTIONS;
   if (formKey === "drywall-finisher") return DRYWALL_PROJECT_LOCATION_OPTIONS;
   if (formKey === "wall-covering") return WALL_COVERING_PROJECT_LOCATION_OPTIONS;
+  if (formKey === "glass-fabrication") {
+    return GLASS_FABRICATION_LOCATION_OPTIONS;
+  }
   return null;
 }
 
@@ -203,11 +277,40 @@ export function usesLocationTradeSheet(
   );
 }
 
+export function usesGlassFabricationSheet(
+  headersKey: GeofenceFormConfig["headersKey"]
+): boolean {
+  return headersKey === "glass-fabrication";
+}
+
 export function headersForForm(config: GeofenceFormConfig): readonly string[] {
+  if (usesGlassFabricationSheet(config.headersKey)) {
+    return GLASS_FABRICATION_HEADERS;
+  }
   if (usesLocationTradeSheet(config.headersKey)) {
     return LOCATION_TRADE_HEADERS;
   }
   return GLAZIERS_HEADERS;
+}
+
+export function normalizeGlassFabricationAreas(
+  areas: readonly string[] | undefined | null,
+  hasTradeExperience: "Yes" | "No"
+): string[] {
+  const allowed = new Set<string>(GLASS_FABRICATION_AREA_OPTIONS);
+  const unique = Array.from(
+    new Set(
+      (areas || [])
+        .map((area) => area.trim())
+        .filter((area) => area.length > 0 && allowed.has(area))
+    )
+  );
+
+  if (hasTradeExperience === "No") {
+    return ["No previous experience"];
+  }
+
+  return unique.filter((area) => area !== "No previous experience");
 }
 
 export const geofenceApplicationSchema = z
@@ -227,11 +330,16 @@ export const geofenceApplicationSchema = z
     /** Required for Glaziers; ignored for location-trade forms. */
     cityArea: z.string().max(120).optional().default(""),
     customCity: z.string().max(120).optional().default(""),
-    /** Required for Painting/Drywall; ignored for Glaziers. */
+    /** Required for Painting/Drywall/Glass Fabrication; ignored for Glaziers. */
     preferredProjectLocation: z.string().max(120).optional().default(""),
     customProjectLocation: z.string().max(120).optional().default(""),
     hasTradeExperience: z.enum(["Yes", "No"]),
     experienceLength: z.string().max(80).optional().default(""),
+    /** Glass Fabrication multi-select skills. */
+    areasOfExperience: z.array(z.string().max(120)).max(20).optional().default([]),
+    otherExperience: z.string().max(500).optional().default(""),
+    /** Glass Fabrication years options (separate from Glaziers experienceLength). */
+    yearsOfExperience: z.string().max(80).optional().default(""),
     callAvailability: z.string().min(1).max(120),
     /** From URL `utm_medium`; server normalizes to Paid/Organic. */
     utmMedium: z.string().max(80).optional(),
@@ -244,6 +352,7 @@ export const geofenceApplicationSchema = z
   .superRefine((data, ctx) => {
     const formKey = data.formKey || "glazier-paid-ad";
     const locationOptions = locationOptionsForForm(formKey);
+    const isGlassFabrication = formKey === "glass-fabrication";
 
     if (locationOptions) {
       if (!locationOptions.includes(data.preferredProjectLocation || "")) {
@@ -281,7 +390,38 @@ export const geofenceApplicationSchema = z
       }
     }
 
-    if (data.hasTradeExperience === "Yes") {
+    if (isGlassFabrication) {
+      const areas = normalizeGlassFabricationAreas(
+        data.areasOfExperience,
+        data.hasTradeExperience
+      );
+
+      if (data.hasTradeExperience === "Yes" && areas.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please select at least one area of experience",
+          path: ["areasOfExperience"],
+        });
+      }
+
+      if (areas.includes("Other") && !(data.otherExperience || "").trim()) {
+        // Optional text field per campaign brief — do not block submission.
+      }
+
+      if (data.hasTradeExperience === "Yes") {
+        if (
+          !GLASS_FABRICATION_YEARS_WITH_EXPERIENCE.includes(
+            data.yearsOfExperience as (typeof GLASS_FABRICATION_YEARS_WITH_EXPERIENCE)[number]
+          )
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please select how many years of experience you have",
+            path: ["yearsOfExperience"],
+          });
+        }
+      }
+    } else if (data.hasTradeExperience === "Yes") {
       if (
         !EXPERIENCE_LENGTH_OPTIONS.includes(
           data.experienceLength as (typeof EXPERIENCE_LENGTH_OPTIONS)[number]
@@ -294,6 +434,7 @@ export const geofenceApplicationSchema = z
         });
       }
     }
+
     if (
       !CALL_AVAILABILITY_OPTIONS.includes(
         data.callAvailability as (typeof CALL_AVAILABILITY_OPTIONS)[number]

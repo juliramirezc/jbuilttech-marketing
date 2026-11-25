@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { assertGoogleDriveConfigured, getMissingGoogleEnvNames } from "@/lib/googleDrive";
 import {
   locationOptionsForForm,
+  normalizeGlassFabricationAreas,
   resolveCityArea,
   resolveGeofenceFormConfig,
   resolveLeadSource,
@@ -11,6 +12,7 @@ import {
 import {
   appendGeofenceApplicationRow,
   ensureGeofenceConstructionSheet,
+  formatGlassFabricationTimestamp,
 } from "@/lib/geofenceSheets";
 import { clientIp, rateLimit } from "@/lib/memberStories";
 
@@ -116,9 +118,31 @@ export async function POST(request: Request) {
   const email = data.email.trim().toLowerCase();
   const phone = data.phone.trim();
   const hasTradeExperience = data.hasTradeExperience;
+  const isGlassFabrication = config.formKey === "glass-fabrication";
   const experienceLength =
-    hasTradeExperience === "Yes" ? data.experienceLength.trim() : "";
+    !isGlassFabrication && hasTradeExperience === "Yes"
+      ? data.experienceLength.trim()
+      : "";
+  const areasList = isGlassFabrication
+    ? normalizeGlassFabricationAreas(
+        data.areasOfExperience,
+        hasTradeExperience
+      )
+    : [];
+  const areasOfExperience = areasList.join(", ");
+  const otherExperience =
+    isGlassFabrication && areasList.includes("Other")
+      ? (data.otherExperience || "").trim()
+      : "";
+  const yearsOfExperience = isGlassFabrication
+    ? hasTradeExperience === "Yes"
+      ? data.yearsOfExperience.trim()
+      : "No experience"
+    : "";
   const callAvailability = data.callAvailability.trim();
+  const submissionTimestamp = isGlassFabrication
+    ? formatGlassFabricationTimestamp()
+    : undefined;
 
   if (isRecentDuplicate(data.submissionId)) {
     return NextResponse.json({
@@ -146,6 +170,10 @@ export async function POST(request: Request) {
       experienceLength,
       callAvailability,
       leadSource,
+      areasOfExperience,
+      otherExperience,
+      yearsOfExperience,
+      submissionTimestamp,
     });
 
     return NextResponse.json({

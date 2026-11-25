@@ -7,6 +7,7 @@ import {
 } from "@/lib/googleDrive";
 import {
   headersForForm,
+  usesGlassFabricationSheet,
   usesLocationTradeSheet,
   type GeofenceFormConfig,
   type LeadSource,
@@ -221,6 +222,50 @@ export function buildLocationTradeSheetRow(options: {
 /** @deprecated Prefer buildLocationTradeSheetRow */
 export const buildPaintingSheetRow = buildLocationTradeSheetRow;
 
+/** Build the 12-cell row written to the Glass Fabrication tab. */
+export function buildGlassFabricationSheetRow(options: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  preferredWorkLocation: string;
+  hasTradeExperience: string;
+  areasOfExperience: string;
+  otherExperience: string;
+  yearsOfExperience: string;
+  callAvailability: string;
+  leadSource: LeadSource;
+  submissionTimestamp: string;
+}): string[] {
+  return [
+    options.firstName,
+    options.lastName,
+    options.email,
+    options.phone,
+    options.preferredWorkLocation,
+    options.hasTradeExperience,
+    options.areasOfExperience,
+    options.otherExperience,
+    options.yearsOfExperience,
+    options.callAvailability,
+    options.leadSource,
+    options.submissionTimestamp,
+  ];
+}
+
+export function formatGlassFabricationTimestamp(date = new Date()): string {
+  return date.toLocaleString("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+}
+
 export async function appendGeofenceApplicationRow(options: {
   spreadsheetId: string;
   sheetTab: string;
@@ -235,35 +280,61 @@ export async function appendGeofenceApplicationRow(options: {
   experienceLength: string;
   callAvailability: string;
   leadSource: LeadSource;
+  areasOfExperience?: string;
+  otherExperience?: string;
+  yearsOfExperience?: string;
+  submissionTimestamp?: string;
 }): Promise<void> {
   const sheets = getSheetsClient();
-  const row = usesLocationTradeSheet(options.headersKey)
-    ? buildLocationTradeSheetRow({
+  const isGlassFabrication = usesGlassFabricationSheet(options.headersKey);
+
+  const row = isGlassFabrication
+    ? buildGlassFabricationSheetRow({
         firstName: options.firstName,
         lastName: options.lastName,
         email: options.email,
         phone: options.phone,
+        preferredWorkLocation: options.preferredProjectLocation || "",
         hasTradeExperience: options.hasTradeExperience,
-        experienceLength: options.experienceLength,
+        areasOfExperience: options.areasOfExperience || "",
+        otherExperience: options.otherExperience || "",
+        yearsOfExperience: options.yearsOfExperience || "",
         callAvailability: options.callAvailability,
         leadSource: options.leadSource,
-        preferredProjectLocation: options.preferredProjectLocation || "",
+        submissionTimestamp:
+          options.submissionTimestamp || formatGlassFabricationTimestamp(),
       })
-    : buildGlaziersSheetRow({
-        firstName: options.firstName,
-        lastName: options.lastName,
-        email: options.email,
-        phone: options.phone,
-        cityArea: options.cityArea || "",
-        hasTradeExperience: options.hasTradeExperience,
-        experienceLength: options.experienceLength,
-        callAvailability: options.callAvailability,
-        leadSource: options.leadSource,
-      });
+    : usesLocationTradeSheet(options.headersKey)
+      ? buildLocationTradeSheetRow({
+          firstName: options.firstName,
+          lastName: options.lastName,
+          email: options.email,
+          phone: options.phone,
+          hasTradeExperience: options.hasTradeExperience,
+          experienceLength: options.experienceLength,
+          callAvailability: options.callAvailability,
+          leadSource: options.leadSource,
+          preferredProjectLocation: options.preferredProjectLocation || "",
+        })
+      : buildGlaziersSheetRow({
+          firstName: options.firstName,
+          lastName: options.lastName,
+          email: options.email,
+          phone: options.phone,
+          cityArea: options.cityArea || "",
+          hasTradeExperience: options.hasTradeExperience,
+          experienceLength: options.experienceLength,
+          callAvailability: options.callAvailability,
+          leadSource: options.leadSource,
+        });
+
+  const range = isGlassFabrication
+    ? `'${escapeSheetTitle(options.sheetTab)}'!A:L`
+    : `'${escapeSheetTitle(options.sheetTab)}'!A:I`;
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: options.spreadsheetId,
-    range: `'${escapeSheetTitle(options.sheetTab)}'!A:I`,
+    range,
     valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
     requestBody: {
