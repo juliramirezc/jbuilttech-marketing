@@ -8,10 +8,15 @@ import {
   GLASS_FABRICATION_SPECIALIZATIONS,
   GLASS_FABRICATION_YEARS_WITH_EXPERIENCE,
 } from "@/lib/geofenceForms";
+import { ClarityGlassFabrication } from "@/components/tracking/ClarityGlassFabrication";
 import {
   TrackingIsolationGuard,
   recordIsolatedApplicationEvent,
 } from "@/components/tracking/TrackingIsolationGuard";
+import {
+  GLASS_FABRICATION_CLARITY_SUBMIT_EVENT,
+  trackClarityEvent,
+} from "@/lib/clarity";
 import "./glass-fabrication.css";
 
 const FORM_KEY = "glass-fabrication";
@@ -209,10 +214,11 @@ export function GlassFabricationApplicationForm() {
         return;
       }
 
-      // Isolated route: local-only event, no shared dataLayer / GTM / Meta pixel.
+      // Isolated route: no shared dataLayer / GTM / Meta. Clarity event only after success.
       if (!eventRecordedRef.current) {
         eventRecordedRef.current = true;
-        recordIsolatedApplicationEvent("glass_fabrication_application_submitted", {
+        trackClarityEvent(GLASS_FABRICATION_CLARITY_SUBMIT_EVENT);
+        recordIsolatedApplicationEvent(GLASS_FABRICATION_CLARITY_SUBMIT_EVENT, {
           form_key: FORM_KEY,
           page_path: PAGE_PATH,
         });
@@ -235,6 +241,7 @@ export function GlassFabricationApplicationForm() {
   return (
     <div className="gf-page">
       <TrackingIsolationGuard />
+      <ClarityGlassFabrication />
       <main className="page">
         <div className="topbar">
           <div className="brand-line">
@@ -268,7 +275,11 @@ export function GlassFabricationApplicationForm() {
           </aside>
 
           <section className="form-card">
-            <form onSubmit={(e) => void onSubmit(e)} noValidate>
+            <form
+              onSubmit={(e) => void onSubmit(e)}
+              noValidate
+              data-clarity-mask="true"
+            >
               {!success ? (
                 <div id="formContent">
                   <div className="form-title">

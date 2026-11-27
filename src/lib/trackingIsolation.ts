@@ -19,6 +19,13 @@ export const SHARED_TRACKING_IDS = {
   metaPixel: "2895032410830936",
 } as const;
 
+/**
+ * Behavioral analytics (not advertising). Same Clarity project as Glazier
+ * (injected there via GTM). Allowed on isolated Glass Fabrication routes when
+ * loaded directly — never via shared GTM/Ads/Meta.
+ */
+export const SHARED_CLARITY_PROJECT_ID = "xnhh6lzw5q";
+
 export function isTrackingIsolatedPath(pathname: string): boolean {
   const normalized = pathname.split("?")[0]?.replace(/\/$/, "") || "/";
   return (TRACKING_ISOLATED_PATHS as readonly string[]).includes(normalized);

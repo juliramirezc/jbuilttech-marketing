@@ -9,8 +9,10 @@ export const analyticsConfig = {
     enabled: !!process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
   },
   clarity: {
-    projectId: process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID || "",
-    enabled: !!process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID,
+    /** Matches Glazier GTM Clarity tag (xnhh6lzw5q) when env is unset. */
+    projectId:
+      process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID || "xnhh6lzw5q",
+    enabled: true,
   },
 } as const;
 
